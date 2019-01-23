@@ -115,7 +115,7 @@ alexNet = AlexNet()
 ts = time.time()
 start_time = time.ctime(ts)
 print("start time:", start_time)
-gc.set_threshold(10, 10, 10)
+#gc.set_threshold(10, 10, 10)
 for i in range(generations):
     trainX, trainY = utils.get_batch_data(batch_size)
     
