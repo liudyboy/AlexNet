@@ -209,6 +209,7 @@ class dense():
 
         if self.dropout is True:
             self.drop_result = F.dropout(self.result)
+            return self.drop_result
 
         return self.result
 
