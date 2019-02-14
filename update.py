@@ -14,10 +14,11 @@ import utils
 
 
 def vanilla_update(params, grads, learning_rate=0.1):
+    """
+    Args:
+       params: parameters needed update by gradients, and this must be chainer Variable type
+       grads: parameters gradinets, and this must be chainer Variable type
+    """
 
-    # print('previous {}'.format(params))
+    params.array += (- learning_rate * grads.array)
 
-    params += - learning_rate * grads
-
-    return params
-    # print('updated {}'.format(params))

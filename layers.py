@@ -18,7 +18,6 @@ import gc
 
 
 
-MIN = 0.0000001
 
 class conv2d():
     def __init__(self, filters, kernel=[2, 2], use_bias=True, stride=(1, 1), padding=None, cover_all=False, activation='relu', name=None, normalization=None):
@@ -105,14 +104,11 @@ class conv2d():
         else: 
             dw, dbias, dx = chainer.grad(outputs=[self.result], inputs=[self.w, self.b, self.x], grad_outputs=[d_out])
 
-        # dw, dbias, dx = chainer.grad(outputs=[self.result], inputs=[self.w, self.b, self.x], grad_outputs=[d_out])
 
         self.fbatch = Variable(np.array(self.batch, dtype=np.float32))
-        # print('dw type: {}, dw shape:{}, dbias type {}, dbias shape {}, dx type: {}, dx shape{}'.format(type(dw), dw.shape, type(dbias), dbias.shape, type(dx), dx.shape))
         if update_method == 'vanilla':
-            self.w = update.vanilla_update(self.w, dw/self.fbatch)
-            self.b = update.vanilla_update(self.b, dbias/self.fbatch)
-
+            update.vanilla_update(self.w, dw/self.fbatch)
+            update.vanilla_update(self.b, dbias/self.fbatch)
 
             del d_out, dw, dbias, dtemp
         return dx
@@ -231,23 +227,23 @@ class dense():
                 dtemp = dtemp[0]
 
             dw, dbias, dx = chainer.grad(outputs=[self.temp_result], inputs=[self.w, self.b, self.x], grad_outputs=[dtemp])
+            del dtemp
+
         else: 
             dw, dbias, dx = chainer.grad(outputs=[self.result], inputs=[self.w, self.b, self.x], grad_outputs=[d_out])
 
         
 
-        # print(' # layer {} gradients : \n dw shape{} \n dx shape{} \n db shape {}'.format(self.name, dw.shape, dx.shape, dbias.shape))
 
-
-        self.fbatch = Variable(np.array(self.batch, dtype=np.float32))
+        self.fbatch = chainer.as_variable(np.array(self.batch, dtype=np.float32))
         if update_method == 'vanilla':
-            self.w = update.vanilla_update(self.w, dw / self.fbatch)
-            self.b = update.vanilla_update(self.b, dbias / self.fbatch)
+            
+            update.vanilla_update(self.w, dw / self.fbatch)
+            update.vanilla_update(self.b, dbias / self.fbatch)
 
         if not (self.init_x.shape == dx.shape):
-            # print('init_x shape: {}, dx shape: {}'.format(self.init_x.shape, dx.shape))
-            # dx = F.reshape(dx, shape=(self.init_x.shape))
             dx = dx.reshape(self.init_x.shape)
 
-        del dw, dbias, dtemp, d_out
+        del dw, dbias, d_out
+
         return dx

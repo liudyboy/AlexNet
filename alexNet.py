@@ -103,7 +103,6 @@ class AlexNet():
         d_out = self.max_pool1.backward(d_out)
         d_out = self.conv1.backward(d_out)
 
-        del d_out
 
 
 generations = 1000
@@ -115,22 +114,16 @@ alexNet = AlexNet()
 ts = time.time()
 start_time = time.ctime(ts)
 print("start time:", start_time)
-#gc.set_threshold(10, 10, 10)
 for i in range(generations):
     trainX, trainY = utils.get_batch_data(batch_size)
     
     Y = trainY.astype(np.int32)
     
-    print('trainX shape:', trainX.shape)
     temp_out = alexNet.forward(trainX)
 
     ts = time.time()
     infer_end_time = time.ctime(ts)
     print("infer_end time:", infer_end_time)
-    # file = open('temp.txt', 'a+')
-    # file.write('epoch {}:'.format(i))
-    # file.write('temp_out: {}'.format(temp_out.array))
-    # file.close()
 
     loss = F.softmax_cross_entropy(temp_out, Y)
     accuracy = F.accuracy(temp_out, Y)
