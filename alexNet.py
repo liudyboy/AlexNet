@@ -18,6 +18,7 @@ import layers
 import utils
 import gc
 import time
+from datetime import datetime
 
 
 class AlexNet():
@@ -26,8 +27,6 @@ class AlexNet():
     def __init__(self):
 
         conv_stride = [4, 4]
-        self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
-        self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
         self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
         self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
         self.conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1])
@@ -42,67 +41,340 @@ class AlexNet():
         self.max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
         self.max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
 
-    def forward(self, x):
-        out = self.conv1.forward(x)
-        # print('layer 1:', out.shape)
-        out = self.max_pool1.forward(out)
+        self.init_file()
 
-        # print('layer max 1:', out.shape)
+
+    def forward(self, x):
+
+        file = open("layer1.txt", "a+")
+        now1 = time.time()
+
+        out = self.conv1.forward(x)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+
+        file = open("layer2.txt", "a+")
+        now1 = time.time()
+
+        out = self.max_pool1.forward(out)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+
+        file = open("layer3.txt", "a+")
+        now1 = time.time()
 
         out = self.conv2.forward(out)
-        # print('layer conv2:', out.shape)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+
+        file = open("layer4.txt", "a+")
+        now1 = time.time()
+
         out = self.max_pool2.forward(out)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
 
-        # print('layer max pool 2:', out.shape)
 
+        file = open("layer5.txt", "a+")
+        now1 = time.time()
 
         out = self.conv3.forward(out)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
 
 
-        # print('layer 3:', out.shape)
+        file = open("layer6.txt", "a+")
+        now1 = time.time()
+
         out = self.conv4.forward(out)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
 
-        # print('layer 4:', out.shape)
+
+        file = open("layer7.txt", "a+")
+        now1 = time.time()
+
         out = self.conv5.forward(out)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
 
-        # print('layer 5:', out.shape)
+
+        file = open("layer8.txt", "a+")
+        now1 = time.time()
+
         out = self.max_pool5.forward(out)
-        # print('layer max 5', out.shape)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("layer9.txt", "a+")
+        now1 = time.time()
 
         out = self.fc6.forward(out)
-        # print('layer fc6', out.shape)
+        
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+
+        file = open("layer10.txt", "a+")
+        now1 = time.time()
 
         out = self.fc7.forward(out)
 
-        # print('layer fc7:', out.shape)
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("layer11.txt", "a+")
+        now1 = time.time()
+
         out = self.fc8.forward(out)
+
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
 
 
         return out
 
     def backward(self, loss, temp_out):
+
+        file = open("blayer1.txt", "a+")
+        now1 = time.time()
+
         d_out = chainer.grad([loss], [temp_out])
 
         if isinstance(d_out, (list)):
             d_out = d_out[0]
         d_out = self.fc8.backward(d_out)
-        
+
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("blayer2.txt", "a+")
+        now1 = time.time()
 
         d_out = self.fc7.backward(d_out)
+
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+
+        file = open("blayer3.txt", "a+")
+        now1 = time.time()
+
         d_out = self.fc6.backward(d_out)
 
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("blayer4.txt", "a+")
+        now1 = time.time()
+
         d_out = self.max_pool5.backward(d_out)
+
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+
+        file = open("blayer5.txt", "a+")
+        now1 = time.time()
+
         d_out = self.conv5.backward(d_out)
 
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("blayer6.txt", "a+")
+        now1 = time.time()
+
         d_out = self.conv4.backward(d_out)
+
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+
+        file = open("blayer7.txt", "a+")
+        now1 = time.time()
+
         d_out = self.conv3.backward(d_out)
 
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("blayer8.txt", "a+")
+        now1 = time.time()
+
         d_out = self.max_pool2.backward(d_out)
+
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("blayer9.txt", "a+")
+        now1 = time.time()
+
         d_out = self.conv2.backward(d_out)
 
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("blayer10.txt", "a+")
+        now1 = time.time()
+
         d_out = self.max_pool1.backward(d_out)
+
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+        file = open("blayer11.txt", "a+")
+        now1 = time.time()
+
         d_out = self.conv1.backward(d_out)
 
+        now2 = time.time()
+        cost = (now2 - now1) * 1000.0
+        file.write(str(cost))
+        file.write('\n')
+        file.close()
+
+    def init_file(self):
+        file = open("layer1.txt", "w")
+        file.close()
+
+        file = open("layer2.txt", "w")
+        file.close()
+
+        file = open("layer3.txt", "w")
+        file.close()
+
+        file = open("layer4.txt", "w")
+        file.close()
+
+        file = open("layer5.txt", "w")
+        file.close()
+
+        file = open("layer6.txt", "w")
+        file.close()
+
+        file = open("layer7.txt", "w")
+        file.close()
+
+        file = open("layer8.txt", "w")
+        file.close()
+
+        file = open("layer9.txt", "w")
+        file.close()
+
+        file = open("layer10.txt", "w")
+        file.close()
+
+        file = open("layer11.txt", "w")
+        file.close()
+
+
+        file = open("blayer1.txt", "w")
+        file.close()
+
+        file = open("blayer2.txt", "w")
+        file.close()
+
+        file = open("blayer3.txt", "w")
+        file.close()
+
+        file = open("blayer4.txt", "w")
+        file.close()
+
+        file = open("blayer5.txt", "w")
+        file.close()
+
+        file = open("blayer6.txt", "w")
+        file.close()
+
+        file = open("blayer7.txt", "w")
+        file.close()
+
+        file = open("blayer8.txt", "w")
+        file.close()
+
+        file = open("blayer9.txt", "w")
+        file.close()
+
+        file = open("blayer10.txt", "w")
+        file.close()
+
+        file = open("blayer11.txt", "w")
+        file.close()
 
 
 generations = 1000
