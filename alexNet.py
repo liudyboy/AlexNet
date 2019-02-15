@@ -44,37 +44,27 @@ class AlexNet():
 
     def forward(self, x):
         out = self.conv1.forward(x)
-        # print('layer 1:', out.shape)
         out = self.max_pool1.forward(out)
 
-        # print('layer max 1:', out.shape)
 
         out = self.conv2.forward(out)
-        # print('layer conv2:', out.shape)
         out = self.max_pool2.forward(out)
 
-        # print('layer max pool 2:', out.shape)
 
 
         out = self.conv3.forward(out)
 
 
-        # print('layer 3:', out.shape)
         out = self.conv4.forward(out)
 
-        # print('layer 4:', out.shape)
         out = self.conv5.forward(out)
 
-        # print('layer 5:', out.shape)
         out = self.max_pool5.forward(out)
-        # print('layer max 5', out.shape)
 
         out = self.fc6.forward(out)
-        # print('layer fc6', out.shape)
 
         out = self.fc7.forward(out)
 
-        # print('layer fc7:', out.shape)
         out = self.fc8.forward(out)
 
 
