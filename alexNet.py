@@ -19,6 +19,7 @@ import utils
 import gc
 import time
 
+gpu_flag = True
 
 class AlexNet():
     insize = 227
@@ -26,17 +27,15 @@ class AlexNet():
     def __init__(self):
 
         conv_stride = [4, 4]
-        self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
-        self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
-        self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
-        self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
-        self.conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1])
-        self.conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1])
-        self.conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1])
+        self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride, use_gpu=gpu_flag)
+        self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1], use_gpu=gpu_flag)
+        self.conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1], use_gpu=gpu_flag)
+        self.conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1], use_gpu=gpu_flag)
+        self.conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1], use_gpu=gpu_flag)
 
-        self.fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6')
-        self.fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7')
-        self.fc8 = layers.dense(1000, activation='relu', name='fc8')
+        self.fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6', use_gpu=gpu_flag)
+        self.fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', use_gpu=gpu_flag)
+        self.fc8 = layers.dense(1000, activation='relu', name='fc8', use_gpu=gpu_flag)
 
         self.max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
         self.max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
@@ -44,10 +43,13 @@ class AlexNet():
 
     def forward(self, x):
         out = self.conv1.forward(x)
+
+        
         out = self.max_pool1.forward(out)
 
 
         out = self.conv2.forward(out)
+
         out = self.max_pool2.forward(out)
 
 
@@ -58,9 +60,9 @@ class AlexNet():
         out = self.conv4.forward(out)
 
         out = self.conv5.forward(out)
-
         out = self.max_pool5.forward(out)
 
+        out.to_cpu()
         out = self.fc6.forward(out)
 
         out = self.fc7.forward(out)
@@ -81,6 +83,7 @@ class AlexNet():
         d_out = self.fc7.backward(d_out)
         d_out = self.fc6.backward(d_out)
 
+        d_out.to_gpu(0)
         d_out = self.max_pool5.backward(d_out)
         d_out = self.conv5.backward(d_out)
 
@@ -91,11 +94,12 @@ class AlexNet():
         d_out = self.conv2.backward(d_out)
 
         d_out = self.max_pool1.backward(d_out)
+
         d_out = self.conv1.backward(d_out)
 
 
 
-generations = 1000
+generations = 100
 
 batch_size = 128
 
