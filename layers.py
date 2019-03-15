@@ -84,14 +84,9 @@ class conv2d():
             return self.result
 
         elif self.use_gpu is True:
-            # self.x = cuda.to_gpu(self.x)
-            # self.w = cuda.to_gpu(self.w)
-            # self.b = cuda.to_gpu(self.b)
-            # self.stride = cuda.to_gpu(self.stride)
             self.x.to_gpu(0)
             self.w.to_gpu(0)
             self.b.to_gpu(0)
-            # self.stride.to_gpu(0)
 
             self.temp_result = F.convolution_2d(self.x, W = self.w, b = self.b, stride = self.stride, pad = self.pad)
 
@@ -209,6 +204,8 @@ class dense():
         self.batch = ((x.shape[0]))
 
 
+
+
         if len(x.shape) == 4:
             self.in_size = x.shape[1] * x.shape[2] * x.shape[3]
             self.x = chainer.as_variable(x.reshape(self.batch, -1))
@@ -232,33 +229,52 @@ class dense():
             self.b = chainer.as_variable(b)
 
 
+        if self.use_gpu is True:
+            self.x.to_gpu(0)
+            self.w.to_gpu(0)
+            self.b.to_gpu(0)
 
         self.temp_result = F.linear(self.x, self.w, self.b)
+
+        # print('temp result', cuda.get_array_module(self.temp_result))
 
         if self.activation == 'relu':
             self.result = F.relu(self.temp_result)
         else:
             self.result = self.temp_result
 
+        # print('forward result 1', cuda.get_array_module(self.result))
         if self.dropout is True:
             self.drop_result = F.dropout(self.result)
             return self.drop_result
 
+        # print('forward result 2', cuda.get_array_module(self.result))
         return self.result
 
     def backward(self, d_out, update_method='vanilla'):
 
         if not (d_out.shape) == (self.result.shape):
             raise Exception('Layer: {} apply backward function the d_out shape: {} and the outputs of this layer shape: {} is not match!'.format(self.name, d_out.shape, self.result.shape))
+        if self.use_gpu is True:
+            d_out.to_gpu(0)
 
-        
         if self.dropout is True:
+            if self.use_gpu is True:
+                self.result.to_gpu(0)
+                self.drop_result.to_gpu(0)
             d_out = chainer.grad(outputs=[self.drop_result], inputs=[self.result], grad_outputs=[d_out])
             if isinstance(d_out, (list)):
                 d_out = d_out[0]
 
+        
+        # print('temp result', cuda.get_array_module(self.temp_result))
+
+        # print('result', cuda.get_array_module(self.result))
+        # print('d_out', cuda.get_array_module(d_out))
 
         if self.activation is not None:
+            if self.use_gpu is True:
+                self.result.to_gpu(0)
             dtemp = chainer.grad(outputs=[self.result], inputs=[self.temp_result], grad_outputs=[d_out])
             if isinstance(dtemp, (list)):
                 dtemp = dtemp[0]
@@ -273,6 +289,10 @@ class dense():
 
 
         self.fbatch = chainer.as_variable(np.array(self.batch, dtype=np.float32))
+
+        if self.use_gpu is True:
+            self.fbatch.to_gpu(0)
+
         if update_method == 'vanilla':
             
             update.vanilla_update(self.w, dw / self.fbatch)
