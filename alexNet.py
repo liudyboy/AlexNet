@@ -28,8 +28,6 @@ class AlexNet():
         conv_stride = [4, 4]
         self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
         self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
-        self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
-        self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
         self.conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1])
         self.conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1])
         self.conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1])
@@ -95,25 +93,26 @@ class AlexNet():
 
 
 
-generations = 1000
+ts1 = time.time()
+start_time = time.ctime(ts1)
+generations = 1
 
 batch_size = 128
 
 alexNet = AlexNet()
 
-ts = time.time()
-start_time = time.ctime(ts)
-print("start time:", start_time)
+# ts2 = time.time()
+# print("init time" , ts2 - ts1)
+
 for i in range(generations):
+    # ts1 = time.time()
+    # start_time = time.ctime(ts1)
+
     trainX, trainY = utils.get_batch_data(batch_size)
     
     Y = trainY.astype(np.int32)
     
     temp_out = alexNet.forward(trainX)
-
-    ts = time.time()
-    infer_end_time = time.ctime(ts)
-    print("infer_end time:", infer_end_time)
 
     loss = F.softmax_cross_entropy(temp_out, Y)
     accuracy = F.accuracy(temp_out, Y)
@@ -122,9 +121,14 @@ for i in range(generations):
 
 
     alexNet.backward(loss, temp_out)
-    ts = time.time()
-    end_time = time.ctime(ts)
-    print("end time:", end_time)
 
+    # ts2 = time.time()
+    # end_time = time.ctime(ts)
+    # print("end time:", end_time)
+
+    # print("process time" , ts2 - ts1)
     del trainX, trainY, Y
 
+
+ts2 = time.time()
+print("process time" , ts2 - ts1)
