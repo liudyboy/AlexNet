@@ -356,7 +356,7 @@ for i in range(generations):
 
     ts = time.time()
     infer_end_time = time.ctime(ts)
-    print("infer_end time:", infer_end_time)
+    # print("infer_end time:", infer_end_time)
 
     loss = F.softmax_cross_entropy(temp_out, Y)
     accuracy = F.accuracy(temp_out, Y)
@@ -365,9 +365,6 @@ for i in range(generations):
 
 
     alexNet.backward(loss, temp_out)
-    ts = time.time()
-    end_time = time.ctime(ts)
-    print("end time:", end_time)
 
     del trainX, trainY, Y
 
