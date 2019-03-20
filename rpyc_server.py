@@ -17,7 +17,7 @@ from chainer import initializers
 from chainer import utils
 from chainer import variable
 import update
-import layers
+import layers_gpu as layers
 import utils
 import gc
 import time
@@ -27,17 +27,25 @@ rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
 class Server(Service):
 
-    fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7')
-    fc8 = layers.dense(1000, activation='relu', name='fc8')
+    fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', use_gpu=True)
+    fc8 = layers.dense(1000, activation='relu', name='fc8', use_gpu=True)
 
     def exposed_forward(self, input, Y):
+        tc1 = time.time()
+
         input = np.asarray(input)
         Y = np.asarray(Y)
-        # print('input type: ', type(input))
-        # print('Y type: ', type(Y))
         Y.astype(np.int32)
-
+        Y = chainer.as_variable(Y)
         input = chainer.as_variable(input)
+
+        tc2 = time.time()
+
+        input.to_gpu()
+        Y.to_gpu()
+
+        tc3 = time.time()
+
         out = self.fc7.forward(input)
         out = self.fc8.forward(out)
 
@@ -51,6 +59,20 @@ class Server(Service):
             d_out = d_out[0]
         d_out = self.fc8.backward(d_out)
         d_out = self.fc7.backward(d_out)
+
+
+        tc4 = time.time()
+
+        d_out.to_cpu()
+
+        tc5 = time.time()
+
+        print("change received data to chainer, cost time:", (tc2 - tc1) * 1000.)
+        print("input data from CPU to GPU, cost time:", (tc3 - tc2) * 1000.)
+        print("computing time:", (tc4 - tc3) * 1000.)
+        print("output data from GPU to CPU, cost time:", (tc5 - tc4) * 1000.)
+
+
         return d_out.array
 
 

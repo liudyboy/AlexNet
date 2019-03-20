@@ -1,5 +1,7 @@
-import rpyc
 import numpy as np
+import sys
+import pickle, struct
+from socket import *
 import chainer
 from chainer import backend
 from chainer import backends
@@ -19,10 +21,6 @@ import layers
 import utils
 import gc
 import time
-
-
-rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
-
 
 conv_stride = [4, 4]
 conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
@@ -110,11 +108,23 @@ def Backward(d_out):
     del d_out
 
 
+address_info = ('192.168.1.153', 25000)
+def send_from(arr, dest):
+    view = memoryview(arr).cast('B')
+    while len(view):
+        nsent = dest.send(view)
+        view = view[nsent:]
+def recv_into(arr, source):
+    view = memoryview(arr).cast('B')
+    while len(view):
+        nrecv = source.recv_into(view)
+        view = view[nrecv:]
+
 if __name__ == "__main__":
-    ts = time.time()
-    start_time = time.ctime(ts)
-    print("start time:", start_time)
-    generations = 1000
+
+    conn = socket(AF_INET, SOCK_STREAM)
+
+    generations = 1
     batch_size = 128
 
 
@@ -126,36 +136,29 @@ if __name__ == "__main__":
 
         Y = trainY.astype(np.int32)
 
-        # print('trainX shape:', trainX.shape)
+        print('trainX shape:', trainX.shape)
         fc6_out = Forward(trainX)
 
-        ts3 = time.time()
+        conn.connect(address_info)
+        print("client send array shape", fc6_out.array.shape)
+        print("client send Y shape", Y.shape)
 
-        conn = rpyc.connect('192.168.1.153', 18871, config = rpyc.core.protocol.DEFAULT_CONFIG)
-        fc7_dout = conn.root.forward(fc6_out.array, Y)
+        send_from(fc6_out.array, conn)
+        # send_from(Y, conn)
 
-        ts4 = time.time()
+        print("send data end!")
+        # fc7_dout = conn.root.forward(fc6_out.array, Y)
 
-        fc7_dout = np.asarray(fc7_dout)
-        fc7_dout = chainer.as_variable(fc7_dout)
+        # fc7_dout = np.asarray(fc7_dout)
+        # fc7_dout = chainer.as_variable(fc7_dout)
 
-        Backward(fc7_dout)
+        # Backward(fc7_dout)
 
-        ts2 = time.time()
-        process_time = ts2 - ts1
-        client_compute_time = ts3-ts1 + ts2-ts4
-
-        print("#epoch {} completed!  Used time {}".format(i, process_time*1000.))
-        print("client computing time: ", client_compute_time*1000.)
-        print("server cost time: ", (process_time - client_compute_time)*1000.)
+        # print("#epoch {} completed!  Used time {}".format(i, process_time*1000.))
+        # print("client computing time: ", client_compute_time*1000.)
+        # print("transfer data time: ", (process_time - client_compute_time)*1000.)
+        conn.close()
 
 
         del trainX, trainY, Y
 
-
-# conn = rpyc.connect('192.168.1.153', 18871)
-
-# input = np.ones(shape=(3, 3), dtype=np.float32)
-
-# out = conn.root.compute(input)
-# print(out)
