@@ -1,7 +1,10 @@
-from rpyc import Service
-from rpyc.utils.server import ThreadedServer
-from threading import Thread
-import rpyc
+from concurrent import futures
+import logging
+import grpc
+
+import communication_pb2_grpc
+import communication_pb2
+import time
 import chainer
 from chainer import backend
 from chainer import backends
@@ -25,10 +28,10 @@ import numpy as np
 import pickle
 import sys
 
-# rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
-class Server(Service):
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+class Connecter(communication_pb2_grpc.CommServicer):
     conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1], use_gpu=True)
     conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1], use_gpu=True)
     conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1], use_gpu=True)
@@ -108,14 +111,14 @@ class Server(Service):
             print("output data from GPU to CPU, cost time:", self.GPU2CPU_time)
         return d_out
 
-    def exposed_forward(self, input, Y):
-
+    def Forwarding(self, request, context):
+        
         print("Start epoch {} :".format(self.epoch))
 
         ts1 = time.time()
 
-        input = pickle.loads(input)
-        Y = pickle.loads(Y)
+        input = pickle.loads(request.array)
+        Y = pickle.loads(request.Y)
 
         ts2 = time.time()
 
@@ -140,15 +143,22 @@ class Server(Service):
         size = sys.getsizeof(d_out)
         print("send client data size:", (size/1024./1024.))
 
-        return d_out
 
 
+        return communication_pb2.ArrayReply(array=d_out)
+
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10), options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)])
+    communication_pb2_grpc.add_CommServicer_to_server(Connecter(), server)
+    server.add_insecure_port("[::]:50051")
+    server.start()
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        server.stop(0)
 
 
-
-
-if __name__ == '__main__':
-    myserver= Server()
-    s = ThreadedServer(myserver, port=18871, protocol_config=rpyc.core.protocol.DEFAULT_CONFIG)
-
-    s.start()
+if __name__ == "__main__":
+    logging.basicConfig()
+    serve()

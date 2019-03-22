@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package communcation;
+
+service Comm{
+   rpc Forwarding(ArrayRecv) returns (ArrayReply) {} 
+}
+
+message ArrayRecv{
+   bytes array = 2;
+   bytes Y = 1;
+}
+
+message ArrayReply{
+   bytes array = 2;
+}

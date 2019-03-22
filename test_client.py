@@ -19,8 +19,18 @@ import layers
 import utils
 import gc
 import time
+import sys
+import pickle
 
 
-rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 conn = rpyc.connect('192.168.1.153', 18871, config = rpyc.core.protocol.DEFAULT_CONFIG)
-conn.root.forward()
+input = np.ones(shape=(10000, 1000), dtype=np.float32)
+input = pickle.dumps(input)
+size = sys.getsizeof(input)
+print("send data size:", size/1024./1024.)
+
+tc1 = time.time()
+output = conn.root.forward(input)
+tc2 = time.time()
+
+print("transfer time:", (tc2 - tc1) * 1000.)

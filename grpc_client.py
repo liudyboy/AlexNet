@@ -1,5 +1,11 @@
-import rpyc
+from __future__ import print_function
+import logging
 import numpy as np
+
+import grpc
+import communication_pb2
+import communication_pb2_grpc
+import pickle
 import chainer
 from chainer import backend
 from chainer import backends
@@ -19,11 +25,7 @@ import layers
 import utils
 import gc
 import time
-import pickle
 import sys
-
-
-# rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
 
 conv_stride = [4, 4]
@@ -110,7 +112,19 @@ def Backward(d_out):
     del d_out
 
 
+
+def run(sendArray, Y):
+    with grpc.insecure_channel("192.168.1.153:50051", options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
+        stub = communication_pb2_grpc.CommStub(channel)
+        sendArray = pickle.dumps(sendArray)
+        Y = pickle.dumps(Y)
+        recv_array = stub.Forwarding(communication_pb2.ArrayRecv(array=sendArray, Y=Y))
+        recv_array = pickle.loads(recv_array.array)
+    # print("received array from serve: \n", recv_array)
+    return recv_array
+
 if __name__ == "__main__":
+    logging.basicConfig()
     ts = time.time()
     start_time = time.ctime(ts)
     print("start time:", start_time)
@@ -128,23 +142,12 @@ if __name__ == "__main__":
         Y = chainer.as_variable(Y)
 
         maxpool2_out = Forward(trainX)
-
-        output = pickle.dumps(maxpool2_out)
-        Y = pickle.dumps(Y)
+        output = maxpool2_out
 
         ts3 = time.time()
-
-        conn = rpyc.connect('192.168.1.153', 18871, config = rpyc.core.protocol.DEFAULT_CONFIG)
-
-        size = sys.getsizeof(output)
-        print("send server data size:", (size/1024./1024.))
-
-        conv3_dout = conn.root.forward(output, Y)
+        dout = run(output, Y)
 
         ts4 = time.time()
-
-        dout = pickle.loads(conv3_dout)
-
         Backward(dout)
 
         ts2 = time.time()
@@ -166,4 +169,3 @@ if __name__ == "__main__":
             print("server cost time: ", server_used_time)
 
         del trainX, trainY, Y
-
