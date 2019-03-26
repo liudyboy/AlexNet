@@ -37,7 +37,7 @@ conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', 
 
 fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6')
 fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7')
-# fc8 = layers.dense(1000, activation='relu', name='fc8')
+fc8 = layers.dense(1000, activation='relu', name='fc8')
 
 max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
 max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
@@ -66,18 +66,18 @@ def Forward(x):
 
     out = fc7.forward(out)
 
-    # out = fc8.forward(out)
+    out = fc8.forward(out)
 
 
     return out
 
 def Backward(d_out):
 
-    # d_out = chainer.grad([loss], [temp_out])
+    d_out = chainer.grad([loss], [temp_out])
     
-    # if isinstance(d_out, (list)):
-    #     d_out = d_out[0]
-    # d_out = fc8.backward(d_out)
+    if isinstance(d_out, (list)):
+        d_out = d_out[0]
+    d_out = fc8.backward(d_out)
         
         
     d_out = fc7.backward(d_out)
