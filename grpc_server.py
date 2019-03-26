@@ -37,7 +37,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
     # conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1], use_gpu=True)
 
     # fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6', use_gpu=True)
-    fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', use_gpu=True)
+    # fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', use_gpu=True)
     fc8 = layers.dense(1000, activation='relu', name='fc8', use_gpu=True)
 
     # max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
@@ -56,8 +56,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
         # out = self.conv5.forward(out)
         # out = self.max_pool5.forward(out)
         # out = self.fc6.forward(out)
-        out = self.fc7.forward(input)
-        out = self.fc8.forward(out)
+        # out = self.fc7.forward(input)
+        out = self.fc8.forward(input)
 
         tc4 = time.time()
 
@@ -88,7 +88,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         if isinstance(d_out, (list)):
             d_out = d_out[0]
         d_out = self.fc8.backward(d_out)
-        d_out = self.fc7.backward(d_out)
+        # d_out = self.fc7.backward(d_out)
         # d_out = self.fc6.backward(d_out)
         # d_out = self.max_pool5.backward(d_out)
         # d_out = self.conv5.backward(d_out)
