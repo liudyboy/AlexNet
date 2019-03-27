@@ -43,73 +43,73 @@ import sys
 # max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
 # max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
 
-def Forward(x):
-    out = conv1.forward(x)
-    out = max_pool1.forward(out)
+# # def Forward(x):
+#     out = conv1.forward(x)
+#     out = max_pool1.forward(out)
     
     
-    out = conv2.forward(out)
-    out = max_pool2.forward(out)
+#     out = conv2.forward(out)
+#     out = max_pool2.forward(out)
     
     
 
-    out = conv3.forward(out)
+#     out = conv3.forward(out)
     
     
-    out = conv4.forward(out)
+#     out = conv4.forward(out)
     
-    out = conv5.forward(out)
+#     out = conv5.forward(out)
 
-    out = max_pool5.forward(out)
+#     out = max_pool5.forward(out)
 
-    out = fc6.forward(out)
+#     out = fc6.forward(out)
 
-    out = fc7.forward(out)
+#     out = fc7.forward(out)
 
-    # out = fc8.forward(out)
+#     # out = fc8.forward(out)
 
 
-    return out
+#     return out
 
-def Backward(d_out):
+# def Backward(d_out):
 
-    # d_out = chainer.grad([loss], [temp_out])
+#     # d_out = chainer.grad([loss], [temp_out])
     
-    # if isinstance(d_out, (list)):
-    #     d_out = d_out[0]
-    # d_out = fc8.backward(d_out)
+#     # if isinstance(d_out, (list)):
+#     #     d_out = d_out[0]
+#     # d_out = fc8.backward(d_out)
         
         
-    d_out = fc7.backward(d_out)
+#     d_out = fc7.backward(d_out)
 
 
-    d_out = fc6.backward(d_out)
+#     d_out = fc6.backward(d_out)
     
 
-    d_out = max_pool5.backward(d_out)
+#     d_out = max_pool5.backward(d_out)
 
 
-    d_out = conv5.backward(d_out)
+#     d_out = conv5.backward(d_out)
 
 
-    d_out = conv4.backward(d_out)
+#     d_out = conv4.backward(d_out)
 
 
-    d_out = conv3.backward(d_out)
+#     d_out = conv3.backward(d_out)
 
-    d_out = max_pool2.backward(d_out)
-
-
-
-    d_out = conv2.backward(d_out)
-
-    d_out = max_pool1.backward(d_out)
+#     d_out = max_pool2.backward(d_out)
 
 
 
-    d_out = conv1.backward(d_out)
+#     d_out = conv2.backward(d_out)
 
-    del d_out
+#     d_out = max_pool1.backward(d_out)
+
+
+
+#     d_out = conv1.backward(d_out)
+
+#     del d_out
 
 
 
