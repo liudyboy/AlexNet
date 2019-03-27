@@ -57,17 +57,17 @@ class Connecter(communication_pb2_grpc.CommServicer):
         input.to_gpu()
 
         tc3 = time.time()
-        out = conv1.forward(input)
-        out = max_pool1.forward(out)
-        out = conv2.forward(out)
-        out = max_pool2.forward(out)
+        out = self.conv1.forward(input)
+        out = self.max_pool1.forward(out)
+        out = self.conv2.forward(out)
+        out = self.max_pool2.forward(out)
         out = self.conv3.forward(out)
         out = self.conv4.forward(out)
         out = self.conv5.forward(out)
         out = self.max_pool5.forward(out)
         out = self.fc6.forward(out)
-        out = self.fc7.forward(input)
-        out = self.fc8.forward(input)
+        out = self.fc7.forward(out)
+        out = self.fc8.forward(out)
 
         tc4 = time.time()
 
@@ -142,14 +142,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         out = self.compute_forward(input)
         d_out = self.compute_backward(out, Y)
 
-        if self.epoch is not 0:
-            if self.epoch == 1:
-                self.change_format_time = (ts2 - ts1) * 1000.
-            elif self.epoch > 1:
-                self.change_format_time = ((ts2 - ts1) * 1000.)/self.epoch + self.change_format_time * (self.epoch-1)/self.epoch
-
-            print("change received data to chainer, cost time:", self.change_format_time)
-
+        ts5 = time.time()
         d_out = pickle.dumps(d_out)
 
         self.epoch += 1
@@ -161,6 +154,13 @@ class Connecter(communication_pb2_grpc.CommServicer):
         print("send client data size:", (size/1024./1024.))
 
 
+        if self.epoch is not 0:
+            if self.epoch == 1:
+                self.change_format_time = (ts2 - ts1 + ts3 -ts5) * 1000.
+            elif self.epoch > 1:
+                self.change_format_time = ((ts2 - ts1 + ts3 - ts5) * 1000.)/self.epoch + self.change_format_time * (self.epoch-1)/self.epoch
+
+            print("change received data format, cost time:", self.change_format_time)
 
         return communication_pb2.ArrayReply(array=d_out)
 
