@@ -32,15 +32,22 @@ import sys
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 class Connecter(communication_pb2_grpc.CommServicer):
-    # conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1], use_gpu=True)
-    # conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1], use_gpu=True)
-    # conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1], use_gpu=True)
 
-    # fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6', use_gpu=True)
-    # fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', use_gpu=True)
+
+    conv_stride = [4, 4]
+    conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride, use_gpu=True)
+    conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1], use_gpu=True)
+    conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1], use_gpu=True)
+    conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1], use_gpu=True)
+    conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1], use_gpu=True)
+
+    fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6', use_gpu=True)
+    fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', use_gpu=True)
     fc8 = layers.dense(1000, activation='relu', name='fc8', use_gpu=True)
 
-    # max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+    max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+    max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+    max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
 
     epoch = 0
 
@@ -50,13 +57,16 @@ class Connecter(communication_pb2_grpc.CommServicer):
         input.to_gpu()
 
         tc3 = time.time()
-
-        # out = self.conv3.forward(input)
-        # out = self.conv4.forward(out)
-        # out = self.conv5.forward(out)
-        # out = self.max_pool5.forward(out)
-        # out = self.fc6.forward(out)
-        # out = self.fc7.forward(input)
+        out = conv1.forward(input)
+        out = max_pool1.forward(out)
+        out = conv2.forward(out)
+        out = max_pool2.forward(out)
+        out = self.conv3.forward(out)
+        out = self.conv4.forward(out)
+        out = self.conv5.forward(out)
+        out = self.max_pool5.forward(out)
+        out = self.fc6.forward(out)
+        out = self.fc7.forward(input)
         out = self.fc8.forward(input)
 
         tc4 = time.time()
@@ -88,15 +98,22 @@ class Connecter(communication_pb2_grpc.CommServicer):
         if isinstance(d_out, (list)):
             d_out = d_out[0]
         d_out = self.fc8.backward(d_out)
-        # d_out = self.fc7.backward(d_out)
-        # d_out = self.fc6.backward(d_out)
-        # d_out = self.max_pool5.backward(d_out)
-        # d_out = self.conv5.backward(d_out)
-        # d_out = self.conv4.backward(d_out)
-        # d_out = self.conv3.backward(d_out)
+        d_out = self.fc7.backward(d_out)
+        d_out = self.fc6.backward(d_out)
+        d_out = self.max_pool5.backward(d_out)
+        d_out = self.conv5.backward(d_out)
+        d_out = self.conv4.backward(d_out)
+        d_out = self.conv3.backward(d_out)
+        d_out = self.max_pool2.backward(d_out)
+        d_out = self.conv2.backward(d_out)
+        d_out = self.max_pool1.backward(d_out)
+        d_out = self.conv1.backward(d_out)
+
+
 
         tc4 = time.time()
-        d_out.to_cpu()
+        # d_out.to_cpu()
+        d_out = np.ones(shape=(1,1))
         tc5 = time.time()
 
         if self.epoch is not 0:

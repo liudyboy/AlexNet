@@ -28,20 +28,20 @@ import time
 import sys
 
 
-conv_stride = [4, 4]
-conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
-conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
-conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1])
-conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1])
-conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1])
+# conv_stride = [4, 4]
+# conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
+# conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
+# conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1])
+# conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1])
+# conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1])
 
-fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6')
-fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7')
-# fc8 = layers.dense(1000, activation='relu', name='fc8')
+# fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6')
+# fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7')
+# # fc8 = layers.dense(1000, activation='relu', name='fc8')
 
-max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
-max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
-max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+# max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+# max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+# max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
 
 def Forward(x):
     out = conv1.forward(x)
@@ -140,14 +140,15 @@ if __name__ == "__main__":
 
         Y = trainY.astype(np.int32)
         Y = chainer.as_variable(Y)
+        trainX = chainer.as_variable(trainX)
 
-        output = Forward(trainX)
+        output = trainX
 
         ts3 = time.time()
         dout = run(output, Y)
 
         ts4 = time.time()
-        Backward(dout)
+        # Backward(dout)
 
         ts2 = time.time()
         process_time = ts2 - ts1
