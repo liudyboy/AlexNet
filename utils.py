@@ -1,7 +1,5 @@
 import numpy as np
 import random
-import scipy
-# import matplotlib.pyplot as plt
 import chainer
 from chainer.dataset import dataset_mixin
 import numpy
@@ -72,22 +70,6 @@ def get_batch_data(batch_size):
 
 
 
-    # X = np.empty([batch_size, 3, 256, 256])
-    # Y = np.empty([batch_size])
-
-    # index = np.random.randint(MAX_NUM, size=batch_size)
-    # # index = np.arange(256)
-    
-    # dataset = chainer.datasets.LabeledImageDataset('./train.txt', 'train')
-
-
-    # img = dataset.__getitem__(index)   #return tuple {image, label}
-
-    # for i in np.arange(len(img)):
-    #     X[i] = img[i][0]
-    #     Y[i] = img[i][1]
-
-    # return np.asarray(X, dtype=np.float32), np.asarray(Y, dtype=np.float32)
 
 def randomize(x, y):
     """ Randomizes the order of data samples and their corresponding labels"""
