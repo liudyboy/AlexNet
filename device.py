@@ -146,10 +146,9 @@ if __name__ == "__main__":
 
 
     for i in range(generations):
+        trainX, trainY = utils.get_batch_data(batch_size)
 
         ts1 = time.time()
-
-        trainX, trainY = utils.get_batch_data(batch_size)
         trainX = chainer.as_variable(trainX)
         Y = trainY.astype(np.int32)
         Y = chainer.as_variable(Y)
@@ -180,7 +179,7 @@ if __name__ == "__main__":
                 server_used_time = complete_time - client_used_time
 
             print("#epoch {} completed!  Used time {}".format(i, complete_time))
-            print("client computing time: ", client_used_time)
-            print("server cost time: ", server_used_time)
+            print("device computing time: ", client_used_time)
+            print("others cost time: ", server_used_time)
 
         del trainX, trainY, Y

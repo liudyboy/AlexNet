@@ -35,6 +35,7 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 class Connecter(communication_pb2_grpc.CommServicer):
 
     epoch = 0
+    init_flag = False
 
     def compute_forward(self, out, process_layers):
         ts1 = time.time()
@@ -69,7 +70,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
             elif self.epoch > 1:
                 self.forward_time = ((ts2 - ts1) * 1000.)/self.epoch + self.forward_time * (self.epoch-1)/self.epoch
 
-            print("server forwarding time:", self.forward_time)
+            print("edge forwarding time:", self.forward_time)
         return out
 
     def compute_backward(self, d_out, Y, process_layers):
@@ -85,27 +86,27 @@ class Connecter(communication_pb2_grpc.CommServicer):
             d_out = chainer.grad([loss], [d_out])
             if isinstance(d_out, (list)):
                 d_out = d_out[0]
-            d_out = fc8.backward(d_out)
+            d_out = self.fc8.backward(d_out)
         if 10 in process_layers:
-            d_out = fc7.backward(d_out)
+            d_out = self.fc7.backward(d_out)
         if 9 in process_layers:
-            d_out = fc6.backward(d_out)
+            d_out = self.fc6.backward(d_out)
         if 8 in process_layers:
-            d_out = max_pool5.backward(d_out)
+            d_out = self.max_pool5.backward(d_out)
         if 7 in process_layers:
-            d_out = conv5.backward(d_out)
+            d_out = self.conv5.backward(d_out)
         if 6 in process_layers:
-            d_out = conv4.backward(d_out)
+            d_out = self.conv4.backward(d_out)
         if 5 in process_layers:
-            d_out = conv3.backward(d_out)
+            d_out = self.conv3.backward(d_out)
         if 4 in process_layers:
-            d_out = max_pool2.backward(d_out)
+            d_out = self.max_pool2.backward(d_out)
         if 3 in process_layers:
-            d_out = conv2.backward(d_out)
+            d_out = self.conv2.backward(d_out)
         if 2 in process_layers:
-            d_out = max_pool1.backward(d_out)
+            d_out = self.max_pool1.backward(d_out)
         if 1 in process_layers:
-            d_out = conv1.backward(d_out)
+            d_out = self.conv1.backward(d_out)
 
 
         ts2 = time.time()
@@ -115,7 +116,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
             elif self.epoch > 1:
                 self.backward_time = ((ts2 - ts1) * 1000.)/self.epoch + self.backward_time * (self.epoch-1)/self.epoch
 
-            print("server backward time:", self.backward_time)
+            print("edge backward time:", self.backward_time)
         return d_out
 
     #To communicate to cloud
@@ -130,6 +131,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
     # initial needed process layers
     def init_layers(self, process_layers):
+        self.init_flag = True
         conv_stride = [4, 4]
 
         if 1 in process_layers:
@@ -159,36 +161,30 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
     #To communicate to device
     def Forwarding(self, request, context):
+        if self.init_flag is False:
+            self.process_layers = args.args_prase()
+            self.init_layers(self.process_layers)
 
-        process_layers = args.args_prase()
-        self.init_layers(process_layers)
 
 
         print("Start epoch {} :".format(self.epoch))
 
-        ts1 = time.time()
 
         input = pickle.loads(request.array)
         Y = pickle.loads(request.Y)
 
-        ts2 = time.time()
 
-        out = self.compute_forward(input, process_layers)
+        out = self.compute_forward(input, self.process_layers)
 
+
+        ts1 = time.time()
         dout = self.run(out, Y)
-
-        d_out = self.compute_backward(dout, Y, process_layers)
-
-        if self.epoch is not 0:
-            if self.epoch == 1:
-                self.change_format_time = (ts2 - ts1) * 1000.
-            elif self.epoch > 1:
-                self.change_format_time = ((ts2 - ts1) * 1000.)/self.epoch + self.change_format_time * (self.epoch-1)/self.epoch
-
-            print("change received data to chainer, cost time:", self.change_format_time)
+        ts2 = time.time()
+        d_out = self.compute_backward(dout, Y, self.process_layers)
 
 
-        if 1 in process_layers:
+
+        if 1 in self.process_layers:
             d_out = np.zeros(shape=(1, 1))
 
         d_out = pickle.dumps(d_out)
@@ -196,7 +192,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.epoch += 1
 
         ts3 = time.time()
-        print("server cost time:", (ts3 - ts1) * 1000.)
+        print("cloud total cost time:", (ts2 - ts1) * 1000.)
 
         size = sys.getsizeof(d_out)
         print("send client data size:", (size/1024./1024.))
