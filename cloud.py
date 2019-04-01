@@ -62,9 +62,9 @@ class Connecter(communication_pb2_grpc.CommServicer):
         ts2 = time.time()
         if self.epoch is not 0:
             if self.epoch == 1:
-                self.forward_time =  (tc2 - tc1) * 1000.
+                self.forward_time =  (ts2 - ts1) * 1000.
             elif self.epoch > 1:
-                self.forward_time = ((tc2 - tc1) * 1000.)/self.epoch + self.forward_time * (self.epoch-1)/self.epoch
+                self.forward_time = ((ts2 - ts1) * 1000.)/self.epoch + self.forward_time * (self.epoch-1)/self.epoch
 
             print("server forwarding time:", self.forward_time)
         return out
@@ -117,7 +117,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         out = self.compute_forward(input)
 
-        d_out = self.compute_backward(dout, Y)
+        d_out = self.compute_backward(out, Y)
 
         if self.epoch is not 0:
             if self.epoch == 1:

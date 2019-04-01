@@ -54,17 +54,17 @@ class Connecter(communication_pb2_grpc.CommServicer):
         ts2 = time.time()
         if self.epoch is not 0:
             if self.epoch == 1:
-                self.forward_time =  (tc2 - tc1) * 1000.
+                self.forward_time =  (ts2 - ts1) * 1000.
             elif self.epoch > 1:
-                self.forward_time = ((tc2 - tc1) * 1000.)/self.epoch + self.forward_time * (self.epoch-1)/self.epoch
+                self.forward_time = ((ts2 - ts1) * 1000.)/self.epoch + self.forward_time * (self.epoch-1)/self.epoch
 
             print("server forwarding time:", self.forward_time)
         return out
 
     def compute_backward(self, out, Y):
         ts1 = time.time()
-        out = self.max_pool2.backward(out)
-        out = self.conv2.backward(out)
+        d_out = self.max_pool2.backward(out)
+        d_out = self.conv2.backward(d_out)
         ts2 = time.time()
         if self.epoch is not 0:
             if self.epoch == 1:
@@ -88,7 +88,6 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
     #To communicate to device
     def Forwarding(self, request, context):
-        
         print("Start epoch {} :".format(self.epoch))
 
         ts1 = time.time()
