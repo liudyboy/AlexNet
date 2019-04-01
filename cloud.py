@@ -171,6 +171,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
             print("change received data to chainer, cost time:", self.change_format_time)
 
+        if 1 in process_layers:
+            d_out = np.zeros(shape=(1,1))
         d_out = pickle.dumps(d_out)
 
         self.epoch += 1

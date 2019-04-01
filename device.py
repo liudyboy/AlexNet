@@ -154,10 +154,13 @@ if __name__ == "__main__":
         Y = trainY.astype(np.int32)
         Y = chainer.as_variable(Y)
 
-        output = Forward(trainX, process_layers)
+        if 0 in process_layers:
+            output = trainX
+        else:
+            output = Forward(trainX, process_layers)
 
         ts3 = time.time()
-        # output = run(output, Y)
+        output = run(output, Y)
 
         ts4 = time.time()
         Backward(output, Y, process_layers)
