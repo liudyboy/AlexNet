@@ -22,7 +22,7 @@ from chainer import utils
 from chainer import variable
 import update
 import layers
-import utils
+import tiny_utils as utils
 import gc
 import time
 import sys
@@ -33,26 +33,37 @@ import args
 def Forward(out, process_layers):
     if 1 in process_layers:
         out = conv1.forward(out)
+        print("out shape", out.shape)
     if 2 in process_layers:
         out = max_pool1.forward(out)
+        print("out shape", out.shape)
     if 3 in process_layers:
         out = conv2.forward(out)
+        print("out shape", out.shape)
     if 4 in process_layers:
         out = max_pool2.forward(out)
+        print("out shape", out.shape)
     if 5 in process_layers:
         out = conv3.forward(out)
+        print("out shape", out.shape)
     if 6 in process_layers:
         out = conv4.forward(out)
+        print("out shape", out.shape)
     if 7 in process_layers:
         out = conv5.forward(out)
+        print("out shape", out.shape)
     if 8 in process_layers:
         out = max_pool5.forward(out)
+        print("out shape", out.shape)
     if 9 in process_layers:
         out = fc6.forward(out)
+        print("out shape", out.shape)
     if 10 in process_layers:
         out = fc7.forward(out)
+        print("out shape", out.shape)
     if 11 in process_layers:
         out = fc8.forward(out)
+        print("out shape", out.shape)
     return out
 
 def Backward(d_out, Y, process_layers):
@@ -142,7 +153,7 @@ if __name__ == "__main__":
     start_time = time.ctime(ts)
     print("start time:", start_time)
     generations = 100
-    batch_size = 64
+    batch_size = 1
 
 
     for i in range(generations):
@@ -159,7 +170,7 @@ if __name__ == "__main__":
             output = Forward(trainX, process_layers)
 
         ts3 = time.time()
-        output = run(output, Y)
+        # output = run(output, Y)
 
         ts4 = time.time()
         Backward(output, Y, process_layers)

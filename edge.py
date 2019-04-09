@@ -120,14 +120,14 @@ class Connecter(communication_pb2_grpc.CommServicer):
         return d_out
 
     #To communicate to cloud
-    def run(self, sendArray, Y):
-        with grpc.insecure_channel("192.168.1.153:50052", options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
-            stub = communication_pb2_grpc.CommStub(channel)
-            sendArray = pickle.dumps(sendArray)
-            Y = pickle.dumps(Y)
-            recv_array = stub.Forwarding(communication_pb2.ArrayRecv(array=sendArray, Y=Y))
-            recv_array = pickle.loads(recv_array.array)
-        return recv_array
+    # def run(self, sendArray, Y):
+    #     with grpc.insecure_channel("192.168.1.153:50052", options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
+    #         stub = communication_pb2_grpc.CommStub(channel)
+    #         sendArray = pickle.dumps(sendArray)
+    #         Y = pickle.dumps(Y)
+    #         recv_array = stub.Forwarding(communication_pb2.ArrayRecv(array=sendArray, Y=Y))
+    #         recv_array = pickle.loads(recv_array.array)
+    #     return recv_array
 
     # initial needed process layers
     def init_layers(self, process_layers):
@@ -178,9 +178,11 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
         ts1 = time.time()
-        dout = self.run(out, Y)
+
+        # if 11 not in self.process_layers:
+        #     out = self.run(out, Y)
         ts2 = time.time()
-        d_out = self.compute_backward(dout, Y, self.process_layers)
+        d_out = self.compute_backward(out, Y, self.process_layers)
 
 
 

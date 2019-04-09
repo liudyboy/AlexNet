@@ -67,7 +67,6 @@ class conv2d():
         self.pad = [0, 0]
         if self.padding == 'SAME':
             self.pad[0], self.pad[1] = int(np.ceil((self.w.shape[2] - 1) / 2)), int(np.ceil((self.w.shape[3] - 1) / 2))
-
         self.temp_result = F.convolution_2d(self.x, W = self.w, b = self.b, stride = self.stride, pad = self.pad)
         if self.activation == 'relu':
             self.result = F.relu(self.temp_result)
