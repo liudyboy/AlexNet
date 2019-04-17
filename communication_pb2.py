@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='communcation',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x13\x63ommunication.proto\x12\x0c\x63ommuncation\"%\n\tArrayRecv\x12\r\n\x05\x61rray\x18\x02 \x01(\x0c\x12\t\n\x01Y\x18\x01 \x01(\x0c\"\x1b\n\nArrayReply\x12\r\n\x05\x61rray\x18\x02 \x01(\x0c\x32I\n\x04\x43omm\x12\x41\n\nForwarding\x12\x17.communcation.ArrayRecv\x1a\x18.communcation.ArrayReply\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x13\x63ommunication.proto\x12\x0c\x63ommuncation\"%\n\tArrayRecv\x12\r\n\x05\x61rray\x18\x02 \x01(\x0c\x12\t\n\x01Y\x18\x01 \x01(\x0c\"\x1b\n\nArrayRecv1\x12\r\n\x05\x61rray\x18\x02 \x01(\x0c\"\x1b\n\nArrayReply\x12\r\n\x05\x61rray\x18\x02 \x01(\x0c\x32\x8f\x01\n\x04\x43omm\x12\x41\n\nForwarding\x12\x17.communcation.ArrayRecv\x1a\x18.communcation.ArrayReply\"\x00\x12\x44\n\x0c\x44\x61ta_paralle\x12\x18.communcation.ArrayRecv1\x1a\x18.communcation.ArrayReply\"\x00\x62\x06proto3')
 )
 
 
@@ -63,6 +63,37 @@ _ARRAYRECV = _descriptor.Descriptor(
 )
 
 
+_ARRAYRECV1 = _descriptor.Descriptor(
+  name='ArrayRecv1',
+  full_name='communcation.ArrayRecv1',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='array', full_name='communcation.ArrayRecv1.array', index=0,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=76,
+  serialized_end=103,
+)
+
+
 _ARRAYREPLY = _descriptor.Descriptor(
   name='ArrayReply',
   full_name='communcation.ArrayReply',
@@ -89,11 +120,12 @@ _ARRAYREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=76,
-  serialized_end=103,
+  serialized_start=105,
+  serialized_end=132,
 )
 
 DESCRIPTOR.message_types_by_name['ArrayRecv'] = _ARRAYRECV
+DESCRIPTOR.message_types_by_name['ArrayRecv1'] = _ARRAYRECV1
 DESCRIPTOR.message_types_by_name['ArrayReply'] = _ARRAYREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -103,6 +135,13 @@ ArrayRecv = _reflection.GeneratedProtocolMessageType('ArrayRecv', (_message.Mess
   # @@protoc_insertion_point(class_scope:communcation.ArrayRecv)
   ))
 _sym_db.RegisterMessage(ArrayRecv)
+
+ArrayRecv1 = _reflection.GeneratedProtocolMessageType('ArrayRecv1', (_message.Message,), dict(
+  DESCRIPTOR = _ARRAYRECV1,
+  __module__ = 'communication_pb2'
+  # @@protoc_insertion_point(class_scope:communcation.ArrayRecv1)
+  ))
+_sym_db.RegisterMessage(ArrayRecv1)
 
 ArrayReply = _reflection.GeneratedProtocolMessageType('ArrayReply', (_message.Message,), dict(
   DESCRIPTOR = _ARRAYREPLY,
@@ -119,8 +158,8 @@ _COMM = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=105,
-  serialized_end=178,
+  serialized_start=135,
+  serialized_end=278,
   methods=[
   _descriptor.MethodDescriptor(
     name='Forwarding',
@@ -128,6 +167,15 @@ _COMM = _descriptor.ServiceDescriptor(
     index=0,
     containing_service=None,
     input_type=_ARRAYRECV,
+    output_type=_ARRAYREPLY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Data_paralle',
+    full_name='communcation.Comm.Data_paralle',
+    index=1,
+    containing_service=None,
+    input_type=_ARRAYRECV1,
     output_type=_ARRAYREPLY,
     serialized_options=None,
   ),

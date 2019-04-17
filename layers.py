@@ -77,7 +77,6 @@ class conv2d():
         if self.normalization == "local_response_normalization":
             self.normal_result = F.local_response_normalization(self.result)
             return self.normal_result
-        
         return self.result
 
     def backward(self, d_out, update_method='vanilla'):
@@ -182,7 +181,6 @@ class dense():
             raise Exception('Layer {}, input: {} in not legal'.format(self.name, x.shape))
 
 
-        
 
         # initial W and b
         if self.w is None:

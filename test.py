@@ -60,17 +60,21 @@ def init_layers(process_layers):
 
 
 if __name__ == "__main__":
-    inputx = np.arange(2*3*4*4).reshape((2, 3, 4, 4))
-    inputx = np.asarray(inputx, dtype=np.float32)
-    
-    print(inputx)
-    conv1 = layers.conv2d(filters=4, kernel=[2, 2], padding='SAME', name='conv1', activation='relu', stride=[1, 1])
-    conv1.w = np.ones(shape=(4, 3, 2, 2), dtype=np.float32)
-    conv1.b = np.zeros(shape=(4), dtype=np.float32)
+    inputx = np.arange(4*3*4*4).reshape((4, 3, 4, 4))
+    inputx = chainer.as_variable(np.asarray(inputx, dtype=np.float32))
 
-    output = conv1.forward(inputx)
-    print("------------------------")
-    print(output[0])
-    print('------------------')
-    print(output[1])
+    input1 = inputx[2:]
+    print(input1.array)
+    print("-------------")
+    inputx = inputx[0:2]
+    print(inputx.array)
+    # conv1 = layers.conv2d(filters=4, kernel=[2, 2], padding='SAME', name='conv1', activation='relu', stride=[1, 1])
+    # conv1.w = np.ones(shape=(4, 3, 2, 2), dtype=np.float32)
+    # conv1.b = np.zeros(shape=(4), dtype=np.float32)
+
+    # output = conv1.forward(inputx)
+    # print("------------------------")
+    # print(output[0])
+    # print('------------------')
+    # print(output[1])
 

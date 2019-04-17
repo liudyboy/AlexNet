@@ -11,6 +11,9 @@ message ArrayRecv{
    bytes Y = 1;
 }
 
+message ArrayRecv1{
+   bytes array = 2;
+}
 message ArrayReply{
    bytes array = 2;
 }

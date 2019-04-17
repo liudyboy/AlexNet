@@ -19,6 +19,11 @@ class CommStub(object):
         request_serializer=communication__pb2.ArrayRecv.SerializeToString,
         response_deserializer=communication__pb2.ArrayReply.FromString,
         )
+    self.Data_paralle = channel.unary_unary(
+        '/communcation.Comm/Data_paralle',
+        request_serializer=communication__pb2.ArrayRecv1.SerializeToString,
+        response_deserializer=communication__pb2.ArrayReply.FromString,
+        )
 
 
 class CommServicer(object):
@@ -32,12 +37,24 @@ class CommServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def Data_paralle(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_CommServicer_to_server(servicer, server):
   rpc_method_handlers = {
       'Forwarding': grpc.unary_unary_rpc_method_handler(
           servicer.Forwarding,
           request_deserializer=communication__pb2.ArrayRecv.FromString,
+          response_serializer=communication__pb2.ArrayReply.SerializeToString,
+      ),
+      'Data_paralle': grpc.unary_unary_rpc_method_handler(
+          servicer.Data_paralle,
+          request_deserializer=communication__pb2.ArrayRecv1.FromString,
           response_serializer=communication__pb2.ArrayReply.SerializeToString,
       ),
   }
