@@ -1,7 +1,6 @@
 from concurrent import futures
 import logging
 import grpc
-
 import communication_pb2_grpc
 import communication_pb2
 import time
