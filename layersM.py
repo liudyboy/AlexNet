@@ -20,7 +20,7 @@ import gc
 
 
 class conv2d():
-    def __init__(self, filters, kernel=[2, 2], use_bias=True, stride=[1, 1], padding=None, cover_all=False, activation='relu', name=None, normalization=None, use_gpu=None):
+    def __init__(self, filters, kernel=[2, 2], use_bias=True, stride=(1, 1), padding=None, cover_all=False, activation='relu', name=None, normalization=None, paralle=False):
         """
           Args:
             filters: the number of filters, shape: one int number
@@ -33,7 +33,6 @@ class conv2d():
         self.filters = filters
         self.kernel = kernel
         self.use_bias = use_bias
-        # self.stride = chainer.as_variable(np.array(stride))
         self.stride = stride
         self.padding = padding
         self.cover_all = cover_all
@@ -43,7 +42,7 @@ class conv2d():
         self.w = None
         self.b = None
         self.name = name
-        self.use_gpu = use_gpu
+        self.paralle = paralle
 
 
     def forward(self, x):
@@ -51,12 +50,14 @@ class conv2d():
           Args:
             x: shape [batch, channels, height, width]
         """
-            # initial W and b
-            # W shape: [out_channels, in_channels, kernel_height, kernel_width]
+
+        # initial W and b
+        # W shape: [out_channels, in_channels, kernel_height, kernel_width]
         if self.w is None:
             w = np.zeros(shape=(self.filters, x.shape[1], self.kernel[0], self.kernel[1]), dtype=np.float32)
             b = np.zeros(shape=(self.filters), dtype=np.float32)
             chainer.initializers.LeCunNormal()(w)
+
             self.w = chainer.as_variable(w)
             self.b = chainer.as_variable(b)
 
@@ -67,50 +68,23 @@ class conv2d():
         self.pad = [0, 0]
         if self.padding == 'SAME':
             self.pad[0], self.pad[1] = int(np.ceil((self.w.shape[2] - 1) / 2)), int(np.ceil((self.w.shape[3] - 1) / 2))
-
-        if self.use_gpu is None:
-            self.temp_result = F.convolution_2d(self.x, W = self.w, b = self.b, stride = self.stride, pad = self.pad)
-
-            if self.activation == 'relu':
-                self.result = F.relu(self.temp_result)
-            else:
-                self.result = self.temp_result
+        self.temp_result = F.convolution_2d(self.x, W = self.w, b = self.b, stride = self.stride, pad = self.pad)
+        if self.activation == 'relu':
+            self.result = F.relu(self.temp_result)
+        else:
+            self.result = self.temp_result
 
 
-            if self.normalization == "local_response_normalization":
-                self.normal_result = F.local_response_normalization(self.result)
-                return self.normal_result
-            return self.result
-
-        elif self.use_gpu is True:
-            self.x.to_gpu(0)
-            self.w.to_gpu(0)
-            self.b.to_gpu(0)
-
-            self.temp_result = F.convolution_2d(self.x, W = self.w, b = self.b, stride = self.stride, pad = self.pad)
-
-            if self.activation == 'relu':
-                self.result = F.relu(self.temp_result)
-            else:
-                self.result = self.temp_result
-
-
-            if self.normalization == "local_response_normalization":
-                self.normal_result = F.local_response_normalization(self.result)
-
-                # xp = cuda.get_array_module(self.normal_result)
-                # print("device of normal_result:", xp)
-                return self.normal_result
-            return self.result
-
+        if self.normalization == "local_response_normalization":
+            self.normal_result = F.local_response_normalization(self.result)
+            return self.normal_result
+        return self.result
 
     def backward(self, d_out, update_method='vanilla'):
         """
           Args:
             d_out: shape need to be the same as the output of the convolution
         """
-
-        d_out.to_gpu(0)
         if not (d_out.shape) == (self.result.shape):
             raise Exception('Layer: {} apply backward function the d_out shape: {} and the outputs of this layer shape: {} is not match!'.format(self.name, d_out.shape, self.result.shape))
 
@@ -126,18 +100,31 @@ class conv2d():
                 dtemp = dtemp[0]
 
             dw, dbias, dx = chainer.grad(outputs=[self.temp_result], inputs=[self.w, self.b, self.x], grad_outputs=[dtemp])
-        else: 
+        else:
             dw, dbias, dx = chainer.grad(outputs=[self.result], inputs=[self.w, self.b, self.x], grad_outputs=[d_out])
-
-
-        self.fbatch = Variable(np.array(self.batch, dtype=np.float32))
-        self.fbatch.to_gpu(0)
-        if update_method == 'vanilla':
-            update.vanilla_update(self.w, dw/self.fbatch)
-            update.vanilla_update(self.b, dbias/self.fbatch)
-
-        del d_out, dw, dbias, dtemp
+        if self.paralle is False:
+            self.fbatch = Variable(np.array(self.batch, dtype=np.float32))
+            if update_method == 'vanilla':
+                update.vanilla_update(self.w, dw/self.fbatch)
+                update.vanilla_update(self.b, dbias/self.fbatch)
+            del d_out, dw, dbias, dtemp
+        else:
+            self.dw = dw
+            self.dbias = dbias
         return dx
+
+    def accumulate_params_grad(self, dw, dbias):
+        """
+        add layer parameters gradient from other device
+        """
+        self.dw = dw + self.dw
+        self.dbias = dbias + self.dbias
+
+    def update_parameters(self, update_method='vanilla', batch=128):
+            self.fbatch = Variable(np.array(batch, dtype=np.float32))
+            if update_method == 'vanilla':
+                update.vanilla_update(self.w, self.dw/self.fbatch)
+                update.vanilla_update(self.b, self.dbias/self.fbatch)
 
 
 
@@ -174,7 +161,7 @@ class max_pool2d():
         return dx
 
 class dense():
-    def __init__(self, out_size, activation=None, name=None, dropout=None, use_gpu=None):
+    def __init__(self, out_size, activation=None, name=None, dropout=None, paralle=False):
         """
           Args:
             out_size: the output size of full connected layer
@@ -189,7 +176,7 @@ class dense():
         self.activation = activation
         self.name = name
         self.dropout = dropout
-        self.use_gpu = use_gpu
+        self.paralle = paralle
 
     def forward(self, x):
         """
@@ -199,9 +186,6 @@ class dense():
         self.init_x = chainer.as_variable(x)
         self.x = None
         self.batch = ((x.shape[0]))
-
-
-
 
         if len(x.shape) == 4:
             self.in_size = x.shape[1] * x.shape[2] * x.shape[3]
@@ -225,14 +209,7 @@ class dense():
             self.b = chainer.as_variable(b)
 
 
-        if self.use_gpu is True:
-            self.x.to_gpu(0)
-            self.w.to_gpu(0)
-            self.b.to_gpu(0)
-
         self.temp_result = F.linear(self.x, self.w, self.b)
-
-        # print('temp result', cuda.get_array_module(self.temp_result))
 
         if self.activation == 'relu':
             self.result = F.relu(self.temp_result)
@@ -249,26 +226,14 @@ class dense():
 
         if not (d_out.shape) == (self.result.shape):
             raise Exception('Layer: {} apply backward function the d_out shape: {} and the outputs of this layer shape: {} is not match!'.format(self.name, d_out.shape, self.result.shape))
-        if self.use_gpu is True:
-            d_out.to_gpu(0)
 
         if self.dropout is True:
-            if self.use_gpu is True:
-                self.result.to_gpu(0)
-                self.drop_result.to_gpu(0)
             d_out = chainer.grad(outputs=[self.drop_result], inputs=[self.result], grad_outputs=[d_out])
             if isinstance(d_out, (list)):
                 d_out = d_out[0]
 
-        
-        # print('temp result', cuda.get_array_module(self.temp_result))
-
-        # print('result', cuda.get_array_module(self.result))
-        # print('d_out', cuda.get_array_module(d_out))
 
         if self.activation is not None:
-            if self.use_gpu is True:
-                self.result.to_gpu(0)
             dtemp = chainer.grad(outputs=[self.result], inputs=[self.temp_result], grad_outputs=[d_out])
             if isinstance(dtemp, (list)):
                 dtemp = dtemp[0]
@@ -276,19 +241,18 @@ class dense():
             dw, dbias, dx = chainer.grad(outputs=[self.temp_result], inputs=[self.w, self.b, self.x], grad_outputs=[dtemp])
             del dtemp
 
-        else: 
+        else:
             dw, dbias, dx = chainer.grad(outputs=[self.result], inputs=[self.w, self.b, self.x], grad_outputs=[d_out])
 
 
-
-        self.fbatch = chainer.as_variable(np.array(self.batch, dtype=np.float32))
-
-        if self.use_gpu is True:
-            self.fbatch.to_gpu(0)
-
-        if update_method == 'vanilla':
-            update.vanilla_update(self.w, dw / self.fbatch)
-            update.vanilla_update(self.b, dbias / self.fbatch)
+        if self.paralle is False:
+            self.fbatch = chainer.as_variable(np.array(self.batch, dtype=np.float32))
+            if update_method == 'vanilla':
+                update.vanilla_update(self.w, dw / self.fbatch)
+                update.vanilla_update(self.b, dbias / self.fbatch)
+        else:
+            self.dw = dw
+            self.dbias = dbias
 
         if not (self.init_x.shape == dx.shape):
             dx = dx.reshape(self.init_x.shape)
@@ -296,3 +260,19 @@ class dense():
         del dw, dbias, d_out
 
         return dx
+
+    def accumulate_params_grad(self, dw, dbias):
+        """
+        add layer parameters gradient from other device
+        """
+        self.dw = dw + self.dw
+        self.dbias = dbias + self.dbias
+
+    def get_params_grad(self):
+        return self.dw, self.dbias
+
+    def update_parameters(self, update_method='vanilla', batch=self.batch):
+            self.fbatch = Variable(np.array(batch, dtype=np.float32))
+            if update_method == 'vanilla':
+                update.vanilla_update(self.w, self.dw/self.fbatch)
+                update.vanilla_update(self.b, self.dbias/self.fbatch)

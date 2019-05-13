@@ -13,7 +13,7 @@ import utils
 
 
 
-def vanilla_update(params, grads, learning_rate=0.1):
+def vanilla_update(params, grads, learning_rate=0.0001):
     """
     Args:
        params: parameters needed update by gradients, and this must be chainer Variable type
