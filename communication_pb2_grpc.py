@@ -14,15 +14,35 @@ class CommStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.Forwarding = channel.unary_unary(
-        '/communcation.Comm/Forwarding',
-        request_serializer=communication__pb2.ArrayRecv.SerializeToString,
-        response_deserializer=communication__pb2.ArrayReply.FromString,
+    self.process_raw_data = channel.unary_unary(
+        '/communcation.Comm/process_raw_data',
+        request_serializer=communication__pb2.RawSend.SerializeToString,
+        response_deserializer=communication__pb2.RawReply.FromString,
         )
-    self.Data_paralle = channel.unary_unary(
-        '/communcation.Comm/Data_paralle',
-        request_serializer=communication__pb2.ArrayRecv1.SerializeToString,
-        response_deserializer=communication__pb2.ArrayReply.FromString,
+    self.process_device_output = channel.unary_unary(
+        '/communcation.Comm/process_device_output',
+        request_serializer=communication__pb2.OutputSend.SerializeToString,
+        response_deserializer=communication__pb2.OutputReply.FromString,
+        )
+    self.get_one_layer_gradients = channel.unary_unary(
+        '/communcation.Comm/get_one_layer_gradients',
+        request_serializer=communication__pb2.GradsSend.SerializeToString,
+        response_deserializer=communication__pb2.GradsReply.FromString,
+        )
+    self.process_cloud_output = channel.unary_unary(
+        '/communcation.Comm/process_cloud_output',
+        request_serializer=communication__pb2.OutputSend.SerializeToString,
+        response_deserializer=communication__pb2.OutputReply.FromString,
+        )
+    self.get_singal_for_new_epoch = channel.unary_unary(
+        '/communcation.Comm/get_singal_for_new_epoch',
+        request_serializer=communication__pb2.Singal.SerializeToString,
+        response_deserializer=communication__pb2.Singal.FromString,
+        )
+    self.get_singal_for_finished_epoch = channel.unary_unary(
+        '/communcation.Comm/get_singal_for_finished_epoch',
+        request_serializer=communication__pb2.Singal.SerializeToString,
+        response_deserializer=communication__pb2.Singal.FromString,
         )
 
 
@@ -30,14 +50,42 @@ class CommServicer(object):
   # missing associated documentation comment in .proto file
   pass
 
-  def Forwarding(self, request, context):
+  def process_raw_data(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def Data_paralle(self, request, context):
+  def process_device_output(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def get_one_layer_gradients(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def process_cloud_output(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def get_singal_for_new_epoch(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def get_singal_for_finished_epoch(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -47,15 +95,35 @@ class CommServicer(object):
 
 def add_CommServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'Forwarding': grpc.unary_unary_rpc_method_handler(
-          servicer.Forwarding,
-          request_deserializer=communication__pb2.ArrayRecv.FromString,
-          response_serializer=communication__pb2.ArrayReply.SerializeToString,
+      'process_raw_data': grpc.unary_unary_rpc_method_handler(
+          servicer.process_raw_data,
+          request_deserializer=communication__pb2.RawSend.FromString,
+          response_serializer=communication__pb2.RawReply.SerializeToString,
       ),
-      'Data_paralle': grpc.unary_unary_rpc_method_handler(
-          servicer.Data_paralle,
-          request_deserializer=communication__pb2.ArrayRecv1.FromString,
-          response_serializer=communication__pb2.ArrayReply.SerializeToString,
+      'process_device_output': grpc.unary_unary_rpc_method_handler(
+          servicer.process_device_output,
+          request_deserializer=communication__pb2.OutputSend.FromString,
+          response_serializer=communication__pb2.OutputReply.SerializeToString,
+      ),
+      'get_one_layer_gradients': grpc.unary_unary_rpc_method_handler(
+          servicer.get_one_layer_gradients,
+          request_deserializer=communication__pb2.GradsSend.FromString,
+          response_serializer=communication__pb2.GradsReply.SerializeToString,
+      ),
+      'process_cloud_output': grpc.unary_unary_rpc_method_handler(
+          servicer.process_cloud_output,
+          request_deserializer=communication__pb2.OutputSend.FromString,
+          response_serializer=communication__pb2.OutputReply.SerializeToString,
+      ),
+      'get_singal_for_new_epoch': grpc.unary_unary_rpc_method_handler(
+          servicer.get_singal_for_new_epoch,
+          request_deserializer=communication__pb2.Singal.FromString,
+          response_serializer=communication__pb2.Singal.SerializeToString,
+      ),
+      'get_singal_for_finished_epoch': grpc.unary_unary_rpc_method_handler(
+          servicer.get_singal_for_finished_epoch,
+          request_deserializer=communication__pb2.Singal.FromString,
+          response_serializer=communication__pb2.Singal.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

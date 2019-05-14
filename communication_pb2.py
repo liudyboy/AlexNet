@@ -19,29 +19,29 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='communcation',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x13\x63ommunication.proto\x12\x0c\x63ommuncation\"%\n\tArrayRecv\x12\r\n\x05\x61rray\x18\x02 \x01(\x0c\x12\t\n\x01Y\x18\x01 \x01(\x0c\"\x1b\n\nArrayRecv1\x12\r\n\x05\x61rray\x18\x02 \x01(\x0c\"\x1b\n\nArrayReply\x12\r\n\x05\x61rray\x18\x02 \x01(\x0c\x32\x8f\x01\n\x04\x43omm\x12\x41\n\nForwarding\x12\x17.communcation.ArrayRecv\x1a\x18.communcation.ArrayReply\"\x00\x12\x44\n\x0c\x44\x61ta_paralle\x12\x18.communcation.ArrayRecv1\x1a\x18.communcation.ArrayReply\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x13\x63ommunication.proto\x12\x0c\x63ommuncation\"#\n\x07RawSend\x12\r\n\x05raw_x\x18\x01 \x01(\x0c\x12\t\n\x01Y\x18\x02 \x01(\x0c\"\x1a\n\x08RawReply\x12\x0e\n\x06signal\x18\x01 \x01(\x0c\"\'\n\nOutputSend\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\t\n\x01Y\x18\x02 \x01(\x0c\"\x1c\n\x0bOutputReply\x12\r\n\x05grads\x18\x01 \x01(\x0c\"C\n\tGradsSend\x12\x0f\n\x07grads_w\x18\x01 \x01(\x0c\x12\x12\n\ngrads_bias\x18\x02 \x01(\x0c\x12\x11\n\tlayer_num\x18\x03 \x01(\x0c\"1\n\nGradsReply\x12\x0f\n\x07grads_w\x18\x01 \x01(\x0c\x12\x12\n\ngrads_bias\x18\x02 \x01(\x0c\"\x18\n\x06Singal\x12\x0e\n\x06singal\x18\x01 \x01(\x0c\x32\xd3\x03\n\x04\x43omm\x12\x43\n\x10process_raw_data\x12\x15.communcation.RawSend\x1a\x16.communcation.RawReply\"\x00\x12N\n\x15process_device_output\x12\x18.communcation.OutputSend\x1a\x19.communcation.OutputReply\"\x00\x12N\n\x17get_one_layer_gradients\x12\x17.communcation.GradsSend\x1a\x18.communcation.GradsReply\"\x00\x12M\n\x14process_cloud_output\x12\x18.communcation.OutputSend\x1a\x19.communcation.OutputReply\"\x00\x12H\n\x18get_singal_for_new_epoch\x12\x14.communcation.Singal\x1a\x14.communcation.Singal\"\x00\x12M\n\x1dget_singal_for_finished_epoch\x12\x14.communcation.Singal\x1a\x14.communcation.Singal\"\x00\x62\x06proto3')
 )
 
 
 
 
-_ARRAYRECV = _descriptor.Descriptor(
-  name='ArrayRecv',
-  full_name='communcation.ArrayRecv',
+_RAWSEND = _descriptor.Descriptor(
+  name='RawSend',
+  full_name='communcation.RawSend',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='array', full_name='communcation.ArrayRecv.array', index=0,
-      number=2, type=12, cpp_type=9, label=1,
+      name='raw_x', full_name='communcation.RawSend.raw_x', index=0,
+      number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='Y', full_name='communcation.ArrayRecv.Y', index=1,
-      number=1, type=12, cpp_type=9, label=1,
+      name='Y', full_name='communcation.RawSend.Y', index=1,
+      number=2, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -59,19 +59,57 @@ _ARRAYRECV = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=37,
-  serialized_end=74,
+  serialized_end=72,
 )
 
 
-_ARRAYRECV1 = _descriptor.Descriptor(
-  name='ArrayRecv1',
-  full_name='communcation.ArrayRecv1',
+_RAWREPLY = _descriptor.Descriptor(
+  name='RawReply',
+  full_name='communcation.RawReply',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='array', full_name='communcation.ArrayRecv1.array', index=0,
+      name='signal', full_name='communcation.RawReply.signal', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=74,
+  serialized_end=100,
+)
+
+
+_OUTPUTSEND = _descriptor.Descriptor(
+  name='OutputSend',
+  full_name='communcation.OutputSend',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='output', full_name='communcation.OutputSend.output', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='Y', full_name='communcation.OutputSend.Y', index=1,
       number=2, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
@@ -89,20 +127,103 @@ _ARRAYRECV1 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=76,
-  serialized_end=103,
+  serialized_start=102,
+  serialized_end=141,
 )
 
 
-_ARRAYREPLY = _descriptor.Descriptor(
-  name='ArrayReply',
-  full_name='communcation.ArrayReply',
+_OUTPUTREPLY = _descriptor.Descriptor(
+  name='OutputReply',
+  full_name='communcation.OutputReply',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='array', full_name='communcation.ArrayReply.array', index=0,
+      name='grads', full_name='communcation.OutputReply.grads', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=143,
+  serialized_end=171,
+)
+
+
+_GRADSSEND = _descriptor.Descriptor(
+  name='GradsSend',
+  full_name='communcation.GradsSend',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='grads_w', full_name='communcation.GradsSend.grads_w', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='grads_bias', full_name='communcation.GradsSend.grads_bias', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='layer_num', full_name='communcation.GradsSend.layer_num', index=2,
+      number=3, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=173,
+  serialized_end=240,
+)
+
+
+_GRADSREPLY = _descriptor.Descriptor(
+  name='GradsReply',
+  full_name='communcation.GradsReply',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='grads_w', full_name='communcation.GradsReply.grads_w', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='grads_bias', full_name='communcation.GradsReply.grads_bias', index=1,
       number=2, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
@@ -120,35 +241,98 @@ _ARRAYREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=105,
-  serialized_end=132,
+  serialized_start=242,
+  serialized_end=291,
 )
 
-DESCRIPTOR.message_types_by_name['ArrayRecv'] = _ARRAYRECV
-DESCRIPTOR.message_types_by_name['ArrayRecv1'] = _ARRAYRECV1
-DESCRIPTOR.message_types_by_name['ArrayReply'] = _ARRAYREPLY
+
+_SINGAL = _descriptor.Descriptor(
+  name='Singal',
+  full_name='communcation.Singal',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='singal', full_name='communcation.Singal.singal', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=293,
+  serialized_end=317,
+)
+
+DESCRIPTOR.message_types_by_name['RawSend'] = _RAWSEND
+DESCRIPTOR.message_types_by_name['RawReply'] = _RAWREPLY
+DESCRIPTOR.message_types_by_name['OutputSend'] = _OUTPUTSEND
+DESCRIPTOR.message_types_by_name['OutputReply'] = _OUTPUTREPLY
+DESCRIPTOR.message_types_by_name['GradsSend'] = _GRADSSEND
+DESCRIPTOR.message_types_by_name['GradsReply'] = _GRADSREPLY
+DESCRIPTOR.message_types_by_name['Singal'] = _SINGAL
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-ArrayRecv = _reflection.GeneratedProtocolMessageType('ArrayRecv', (_message.Message,), dict(
-  DESCRIPTOR = _ARRAYRECV,
+RawSend = _reflection.GeneratedProtocolMessageType('RawSend', (_message.Message,), dict(
+  DESCRIPTOR = _RAWSEND,
   __module__ = 'communication_pb2'
-  # @@protoc_insertion_point(class_scope:communcation.ArrayRecv)
+  # @@protoc_insertion_point(class_scope:communcation.RawSend)
   ))
-_sym_db.RegisterMessage(ArrayRecv)
+_sym_db.RegisterMessage(RawSend)
 
-ArrayRecv1 = _reflection.GeneratedProtocolMessageType('ArrayRecv1', (_message.Message,), dict(
-  DESCRIPTOR = _ARRAYRECV1,
+RawReply = _reflection.GeneratedProtocolMessageType('RawReply', (_message.Message,), dict(
+  DESCRIPTOR = _RAWREPLY,
   __module__ = 'communication_pb2'
-  # @@protoc_insertion_point(class_scope:communcation.ArrayRecv1)
+  # @@protoc_insertion_point(class_scope:communcation.RawReply)
   ))
-_sym_db.RegisterMessage(ArrayRecv1)
+_sym_db.RegisterMessage(RawReply)
 
-ArrayReply = _reflection.GeneratedProtocolMessageType('ArrayReply', (_message.Message,), dict(
-  DESCRIPTOR = _ARRAYREPLY,
+OutputSend = _reflection.GeneratedProtocolMessageType('OutputSend', (_message.Message,), dict(
+  DESCRIPTOR = _OUTPUTSEND,
   __module__ = 'communication_pb2'
-  # @@protoc_insertion_point(class_scope:communcation.ArrayReply)
+  # @@protoc_insertion_point(class_scope:communcation.OutputSend)
   ))
-_sym_db.RegisterMessage(ArrayReply)
+_sym_db.RegisterMessage(OutputSend)
+
+OutputReply = _reflection.GeneratedProtocolMessageType('OutputReply', (_message.Message,), dict(
+  DESCRIPTOR = _OUTPUTREPLY,
+  __module__ = 'communication_pb2'
+  # @@protoc_insertion_point(class_scope:communcation.OutputReply)
+  ))
+_sym_db.RegisterMessage(OutputReply)
+
+GradsSend = _reflection.GeneratedProtocolMessageType('GradsSend', (_message.Message,), dict(
+  DESCRIPTOR = _GRADSSEND,
+  __module__ = 'communication_pb2'
+  # @@protoc_insertion_point(class_scope:communcation.GradsSend)
+  ))
+_sym_db.RegisterMessage(GradsSend)
+
+GradsReply = _reflection.GeneratedProtocolMessageType('GradsReply', (_message.Message,), dict(
+  DESCRIPTOR = _GRADSREPLY,
+  __module__ = 'communication_pb2'
+  # @@protoc_insertion_point(class_scope:communcation.GradsReply)
+  ))
+_sym_db.RegisterMessage(GradsReply)
+
+Singal = _reflection.GeneratedProtocolMessageType('Singal', (_message.Message,), dict(
+  DESCRIPTOR = _SINGAL,
+  __module__ = 'communication_pb2'
+  # @@protoc_insertion_point(class_scope:communcation.Singal)
+  ))
+_sym_db.RegisterMessage(Singal)
 
 
 
@@ -158,25 +342,61 @@ _COMM = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=135,
-  serialized_end=278,
+  serialized_start=320,
+  serialized_end=787,
   methods=[
   _descriptor.MethodDescriptor(
-    name='Forwarding',
-    full_name='communcation.Comm.Forwarding',
+    name='process_raw_data',
+    full_name='communcation.Comm.process_raw_data',
     index=0,
     containing_service=None,
-    input_type=_ARRAYRECV,
-    output_type=_ARRAYREPLY,
+    input_type=_RAWSEND,
+    output_type=_RAWREPLY,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='Data_paralle',
-    full_name='communcation.Comm.Data_paralle',
+    name='process_device_output',
+    full_name='communcation.Comm.process_device_output',
     index=1,
     containing_service=None,
-    input_type=_ARRAYRECV1,
-    output_type=_ARRAYREPLY,
+    input_type=_OUTPUTSEND,
+    output_type=_OUTPUTREPLY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='get_one_layer_gradients',
+    full_name='communcation.Comm.get_one_layer_gradients',
+    index=2,
+    containing_service=None,
+    input_type=_GRADSSEND,
+    output_type=_GRADSREPLY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='process_cloud_output',
+    full_name='communcation.Comm.process_cloud_output',
+    index=3,
+    containing_service=None,
+    input_type=_OUTPUTSEND,
+    output_type=_OUTPUTREPLY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='get_singal_for_new_epoch',
+    full_name='communcation.Comm.get_singal_for_new_epoch',
+    index=4,
+    containing_service=None,
+    input_type=_SINGAL,
+    output_type=_SINGAL,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='get_singal_for_finished_epoch',
+    full_name='communcation.Comm.get_singal_for_finished_epoch',
+    index=5,
+    containing_service=None,
+    input_type=_SINGAL,
+    output_type=_SINGAL,
     serialized_options=None,
   ),
 ])

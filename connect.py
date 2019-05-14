@@ -29,33 +29,65 @@ import sys
 import args
 
 
-#  send input raw data to destination
+#  Send: input raw data to destination
 # destination: "ip:port"
-def conn_send_input(destination, sendArray, Y):
+# Return: singal
+def conn_send_raw_data(destination, raw_x, Y):
     with grpc.insecure_channel(destination, options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
         stub = communication_pb2_grpc.CommStub(channel)
-        sendArray = pickle.dumps(sendArray)
+        raw_x = pickle.dumps(raw_x)
         Y = pickle.dumps(Y)
-        recv_array = stub.process_raw_data(communication_pb2.ArrayRecv(array=sendArray, Y=Y))
-        recv_array = pickle.loads(recv_array.array)
-    return recv_array
+        recv_data = stub.process_raw_data(communication_pb2.RawSend(raw_x=raw_x, Y=Y))
+        singal = pickle.loads(recv_data.signal)
+    return singal
 
-# send output to destination
-def conn_device_send_output(destination, sendArray, Y):
+# Send: layer output, Y
+#Reture: gradients_x
+def conn_send_device_output_data(destination, output, Y):
     with grpc.insecure_channel(destination, options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
         stub = communication_pb2_grpc.CommStub(channel)
-        sendArray = pickle.dumps(sendArray)
+        output = pickle.dumps(output)
         Y = pickle.dumps(Y)
-        recv_array = stub.process_device_output(communication_pb2.ArrayRecv(array=sendArray, Y=Y))
-        recv_array = pickle.loads(recv_array.array)
-    return recv_array
-# send gradient to destination
-def conn_send_gradient(destination, sendArray, Y):
-    with grpc.insecure_channel(destination, options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
-        stub = communication_pb2_grpc.CommStub(channel)
-        sendArray = pickle.dumps(sendArray)
-        Y = pickle.dumps(Y)
-        recv_array = stub.Forwarding(communication_pb2.ArrayRecv(array=sendArray, Y=Y))
-        recv_array = pickle.loads(recv_array.array)
-    return recv_array
+        recv_data = stub.process_device_output(communication_pb2.OutputSend(output=output, Y=Y))
+        grads_x = pickle.loads(recv_data.grads)
+    return grads_x
 
+
+# Send: one layer grad_w and grads_bias, layer number
+# Return: one laeyr grad_w and grads_bias
+def conn_get_gradients(destination, grads_w, grads_bias, layer_num):
+    with grpc.insecure_channel(destination, options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
+        stub = communication_pb2_grpc.CommStub(channel)
+        grads_w = pickle.dumps(grads_w)
+        grads_bias = pickle.dumps(grads_bias)
+        layer_num = pickle.dumps(layer_num)
+        recv_data = stub.get_one_layer_gradients(communication_pb2.GradsSend(grads_w=grads_w, grads_bias=grads_bias, layer_num=layer_num))
+        grads_w = pickle.loads(recv_data.grads_w)
+        grads_bias = pickle.loads(recv_data.grads_bias)
+    return grads_w, grads_bias
+
+
+# Send: layer output, Y
+#Reture: gradients_x
+def conn_send_cloud_output_data(destination, output, Y):
+    with grpc.insecure_channel(destination, options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
+        stub = communication_pb2_grpc.CommStub(channel)
+        output = pickle.dumps(output)
+        Y = pickle.dumps(Y)
+        recv_data = stub.process_cloud_output(communication_pb2.OutputSend(output=output, Y=Y))
+        grads_x = pickle.loads(recv_data.grads)
+    return grads_x
+
+def conn_get_singal_for_new_epoch(destination):
+    with grpc.insecure_channel(destination, options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
+        stub = communication_pb2_grpc.CommStub(channel)
+        recv_data = stub.get_singal_for_new_epoch(communication_pb2.Singal(singal=pickle.dumps(1)))
+        singal = pickle.loads(recv_data.singal)
+    return singal
+
+def conn_get_singal_for_finished_epoch(destination):
+    with grpc.insecure_channel(destination, options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
+        stub = communication_pb2_grpc.CommStub(channel)
+        recv_data = stub.get_singal_for_finished_epoch(communication_pb2.Singal(singal=pickle.dumps(1)))
+        singal = pickle.loads(recv_data.singal)
+    return singal

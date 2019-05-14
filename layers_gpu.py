@@ -239,10 +239,12 @@ class dense():
         else:
             self.result = self.temp_result
 
+        # print('forward result 1', cuda.get_array_module(self.result))
         if self.dropout is True:
             self.drop_result = F.dropout(self.result)
             return self.drop_result
 
+        # print('forward result 2', cuda.get_array_module(self.result))
         return self.result
 
     def backward(self, d_out, update_method='vanilla'):
@@ -279,6 +281,7 @@ class dense():
         else: 
             dw, dbias, dx = chainer.grad(outputs=[self.result], inputs=[self.w, self.b, self.x], grad_outputs=[d_out])
 
+        
 
 
         self.fbatch = chainer.as_variable(np.array(self.batch, dtype=np.float32))
@@ -287,6 +290,7 @@ class dense():
             self.fbatch.to_gpu(0)
 
         if update_method == 'vanilla':
+            
             update.vanilla_update(self.w, dw / self.fbatch)
             update.vanilla_update(self.b, dbias / self.fbatch)
 

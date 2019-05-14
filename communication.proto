@@ -3,17 +3,43 @@ syntax = "proto3";
 package communcation;
 
 service Comm{
-   rpc Forwarding(ArrayRecv) returns (ArrayReply) {} 
+   rpc process_raw_data(RawSend) returns (RawReply) {}
+   rpc process_device_output(OutputSend) returns (OutputReply) {}
+   rpc get_one_layer_gradients(GradsSend) returns (GradsReply) {}
+   rpc process_cloud_output(OutputSend) returns (OutputReply) {}
+   rpc get_singal_for_new_epoch (Singal) returns (Singal) {}
+   rpc get_singal_for_finished_epoch (Singal) returns (Singal) {}
 }
 
-message ArrayRecv{
-   bytes array = 2;
-   bytes Y = 1;
+message RawSend{
+   bytes raw_x = 1;
+   bytes Y = 2;
 }
 
-message ArrayRecv1{
-   bytes array = 2;
+message RawReply{
+   bytes signal = 1;
 }
-message ArrayReply{
-   bytes array = 2;
+
+message OutputSend{
+   bytes output = 1;
+   bytes Y = 2;
+}
+
+message OutputReply{
+   bytes grads = 1;
+}
+
+message GradsSend{
+   bytes grads_w = 1;
+   bytes grads_bias = 2;
+   bytes layer_num = 3;
+}
+
+message GradsReply{
+  bytes grads_w = 1;
+  bytes grads_bias = 2;
+}
+
+message Singal{
+  bytes singal = 1;
 }

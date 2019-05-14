@@ -27,64 +27,62 @@ import gc
 import time
 import sys
 import args
-import connect
 import _thread
-
+import connect
 
 def init_layers(process_layers):
     global conv1, conv2, conv3, conv4, conv5, fc6, fc7, fc8, max_pool1, max_pool2, max_pool5
     conv_stride = [4, 4]
-    paralle = False
     conv_stride = [4, 4]
     if 1 in process_layers:
-        self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride, paralle=paralle)
+        conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride )
         c = np.load("init_wb/conv1.npz")
-        self.conv1.w, self.conv1.b = c['w'], c['b']
-        self.conv1.w, self.conv1.b = chainer.as_variable(self.conv1.w), chainer.as_variable(self.conv1.b)
+        conv1.w, conv1.b = c['w'], c['b']
+        conv1.w, conv1.b = chainer.as_variable(conv1.w), chainer.as_variable(conv1.b)
     if 2 in process_layers:
-        self.max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+        max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
     if 3 in process_layers:
-        self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1], paralle=paralle)
+        conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1] )
         c = np.load("init_wb/conv2.npz")
-        self.conv2.w, self.conv2.b = c['w'], c['b']
-        self.conv2.w, self.conv2.b = chainer.as_variable(self.conv2.w), chainer.as_variable(self.conv2.b)
+        conv2.w, conv2.b = c['w'], c['b']
+        conv2.w, conv2.b = chainer.as_variable(conv2.w), chainer.as_variable(conv2.b)
     if 4 in process_layers:
-        self.max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+        max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
     if 5 in process_layers:
-        self.conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1], paralle=paralle)
+        conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1] )
         c = np.load("init_wb/conv3.npz")
-        self.conv3.w, self.conv3.b = c['w'], c['b']
-        self.conv3.w, self.conv3.b = chainer.as_variable(self.conv3.w), chainer.as_variable(self.conv3.b)
+        conv3.w, conv3.b = c['w'], c['b']
+        conv3.w, conv3.b = chainer.as_variable(conv3.w), chainer.as_variable(conv3.b)
     if 6 in process_layers:
-        self.conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1], paralle=paralle)
+        conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1] )
         c = np.load("init_wb/conv4.npz")
-        self.conv4.w, self.conv4.b = c['w'], c['b']
-        self.conv4.w, self.conv4.b = chainer.as_variable(self.conv4.w), chainer.as_variable(self.conv4.b)
+        conv4.w, conv4.b = c['w'], c['b']
+        conv4.w, conv4.b = chainer.as_variable(conv4.w), chainer.as_variable(conv4.b)
     if 7 in process_layers:
-        self.conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1], paralle=paralle)
+        conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1] )
         c = np.load("init_wb/conv5.npz")
-        self.conv5.w, self.conv5.b = c['w'], c['b']
-        self.conv5.w, self.conv5.b = chainer.as_variable(self.conv5.w), chainer.as_variable(self.conv5.b)
+        conv5.w, conv5.b = c['w'], c['b']
+        conv5.w, conv5.b = chainer.as_variable(conv5.w), chainer.as_variable(conv5.b)
     if 8 in process_layers:
-        self.max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+        max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
     if 9 in process_layers:
-        self.fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6', paralle=paralle)
+        fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6' )
         c = np.load("init_wb/fc6.npz")
-        self.fc6.w, self.fc6.b = c['w'], c['b']
-        self.fc6.w, self.fc6.b = chainer.as_variable(self.fc6.w), chainer.as_variable(self.fc6.b)
+        fc6.w, fc6.b = c['w'], c['b']
+        fc6.w, fc6.b = chainer.as_variable(fc6.w), chainer.as_variable(fc6.b)
     if 10 in process_layers:
-        self.fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', paralle=paralle)
+        fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7' )
         c = np.load("init_wb/fc7.npz")
-        self.fc7.w, self.fc7.b = c['w'], c['b']
-        self.fc7.w, self.fc7.b = chainer.as_variable(self.fc7.w), chainer.as_variable(self.fc7.b)
+        fc7.w, fc7.b = c['w'], c['b']
+        fc7.w, fc7.b = chainer.as_variable(fc7.w), chainer.as_variable(fc7.b)
     if 11 in process_layers:
-        self.fc8 = layers.dense(200, activation='relu', name='fc8', paralle=paralle)
+        fc8 = layers.dense(200, activation='relu', name='fc8' )
         c = np.load("init_wb/fc8.npz")
-        self.fc8.w, self.fc8.b = c['w'], c['b']
-        self.fc8.w, self.fc8.b = chainer.as_variable(self.fc8.w), chainer.as_variable(self.fc8.b)
+        fc8.w, fc8.b = c['w'], c['b']
+        fc8.w, fc8.b = chainer.as_variable(fc8.w), chainer.as_variable(fc8.b)
 
 
-def Forward(out, process_layers):
+def forward(out, process_layers):
     if 1 in process_layers:
         out = conv1.forward(out)
     if 2 in process_layers:
@@ -109,7 +107,7 @@ def Forward(out, process_layers):
         out = fc8.forward(out)
     return out
 
-def cal_gradients(d_out, Y, process_layers):
+def cal_gradients(d_out, process_layers, Y=None):
     if 11 in process_layers:
         loss = F.softmax_cross_entropy(d_out, Y)
         accuracy = F.accuracy(d_out, Y)
@@ -142,60 +140,133 @@ def cal_gradients(d_out, Y, process_layers):
 
     del d_out
 
+def update_one_layer_parameters(layer_num, batch_size):
+    if 1 == layer_num:
+        conv1.update_parameters(batch=batch_size)
+    if 2 == layer_num:
+        pass          # it is maxpool layer needn't exchange gradients
+    if 3 == layer_num:
+        conv2.update_parameters(batch=batch_size)
+    if 4 == layer_num:
+        pass          # it is maxpool layer needn't exchange gradients
+    if 5 == layer_num:
+        conv3.update_parameters(batch=batch_size)
+    if 6 == layer_num:
+        conv4.update_parameters(batch=batch_size)
+    if 7 == layer_num:
+        conv5.update_parameters(batch=batch_size)
+    if 8 == layer_num:
+        pass          # it is maxpool layer needn't exchange gradients
+    if 9 == layer_num:
+        fc6.update_parameters(batch=batch_size)
+    if 10 == layer_num:
+        fc7.update_parameters(batch=batch_size)
+    if 11 == layer_num:
+        fc8.update_parameters(batch=batch_size)
+    return
 
+def process_gradients_exchange(layer_num):
+    global edge_address
+    destination = edge_address
+    if 1 == layer_num:
+        grads_w, grads_bias = conv1.get_params_grad()
+        grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
+        conv1.accumulate_params_grad(grads_w, grads_bias)
+    if 2 == layer_num:
+        pass          # it is maxpool layer needn't exchange gradients
+    if 3 == layer_num:
+        grads_w, grads_bias = conv2.get_params_grad()
+        grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
+        conv2.accumulate_params_grad(grads_w, grads_bias)
+    if 4 == layer_num:
+        pass          # it is maxpool layer needn't exchange gradients
+    if 5 == layer_num:
+        grads_w, grads_bias = conv3.get_params_grad()
+        grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
+        conv3.accumulate_params_grad(grads_w, grads_bias)
+    if 6 == layer_num:
+        grads_w, grads_bias = conv4.get_params_grad()
+        grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
+        conv4.accumulate_params_grad(grads_w, grads_bias)
+    if 7 == layer_num:
+        grads_w, grads_bias = conv5.get_params_grad()
+        grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
+        conv5.accumulate_params_grad(grads_w, grads_bias)
+    if 8 == layer_num:
+        pass          # it is maxpool layer needn't exchange gradients
+    if 9 == layer_num:
+        grads_w, grads_bias = fc6.get_params_grad()
+        grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
+        fc6.accumulate_params_grad(grads_w, grads_bias)
+    if 10 == layer_num:
+        grads_w, grads_bias = fc7.get_params_grad()
+        grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
+        fc7.accumulate_params_grad(grads_w, grads_bias)
+    if 11 == layer_num:
+        grads_w, grads_bias = fc8.get_params_grad()
+        grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
+        fc8.accumulate_params_grad(grads_w, grads_bias)
 
-edge_address = "192.168.1.77:50051"
-cloud_address = ""
-
+def init_signal():
+    global finish_flag
+    finish_flag = 0                      # if fnish_flag equal 2 means one epoch training end
 
 def send_raw_data(threadName, threadID, destination, X, Y):
-    global finish_sinal
+    global finish_flag
     print(threadName, " start")
-    connect.conn_send_input(destination, X, Y)
+    connect.conn_send_raw_data(destination, X.array, Y.array)
     print(threadName, " end")
-    finish = True
+    finish_flag += 1
 
-def send_output_data(threadName, threadID, destination, X, Y):
-    global recv_output_reply_flag, output_reply
-    print(threadName, ' start')
-    output_reply = connect.conn_device_send_output(destination, X, Y)
-    output_reply = chainer.as_variable(output_reply)
-    recv_output_reply_flag = True
-    print(threadName, ' end')
-def wait_reply_output():
-    global recv_output_reply_flag
-    while recv_output_reply_flag is False:
-        pass
+def send_output_data(destination, output, Y):
+    print('Send output to edge')
+    reply = connect.conn_send_device_output_data(destination, output.array, Y.array)
+    print('receive output gradients')
+    return chainer.as_variable(reply)
 
-def wait_epoch_end():
-    global finish_sinal
-    while finish_sinal is False:
+def get_one_layer_gradients(destination, grads_w, grads_bias, layer_num):
+    # print('get layer ', layer_num, ' gradients')
+    while True:
+        recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num)
+        if recv_grads_w.shape[0] != 1:
+            break;
+    # print('complete get layer', layer_num, ' gradients')
+    # print('layer gradients: ', recv_grads_w.shape)
+    return chainer.as_variable(recv_grads_w), chainer.as_variable(recv_grads_bias)
+
+# just in case to wait two new threads complete
+def wait_threads_complete():
+    print('wait threads complete')
+    while finish_flag is not 2:
         pass
+    print('one epoch training completed')
+
+
+edge_address = "192.168.1.77:50055"
+cloud_address = "192.168.1.153:50052"
+
 if __name__ == "__main__":
-    # initial layers run in device
+
     device_run_layers, cloud_run_layers = args.args_prase()
     init_layers(np.arange(device_run_layers+1))
-
-    edge_batch, cloud_batch = 50, 50
+    edge_batch, cloud_batch = 75, 20
     logging.basicConfig()
-    ts = time.time()
-    start_time = time.ctime(ts)
-    print("start time:", start_time)
-    generations = 100
-    batch_size = 128
+    generations = 10
+    total_batch_size = 128
     for i in range(generations):
-        global recv_output_reply_flag = False
-        global output_reply, finish_sinal = False
+        init_signal()
+        trainX, trainY = utils.get_batch_data(total_batch_size)
+        trainX = chainer.as_variable(trainX)
+        trainY = chainer.as_variable(trainY.astype(np.int32))
 
-        trainX, trainY = utils.get_batch_data(batch_size)
-        trainY = trainY.astype(np.int32)
+        ts1 = time.time()
 
         #spilt raw data for edge , cloud
+        batch_size = trainX.shape[0]
         cloud_X = trainX[batch_size-cloud_batch:]
         cloud_Y = trainY[batch_size-cloud_batch:]
         trainX = trainX[:batch_size-cloud_batch]
-        trainY = trainY[:batch_size=cloud_batch]
-
+        trainY = trainY[:batch_size-cloud_batch]
         batch_size = trainX.shape[0]
         edge_X = trainX[batch_size-edge_batch:]
         edge_Y = trainY[batch_size-edge_batch:]
@@ -206,22 +277,25 @@ if __name__ == "__main__":
             _thread.start_new_thread(send_raw_data, ("send cloud thread", 0, cloud_address, cloud_X, cloud_Y))
             _thread.start_new_thread(send_raw_data, ("send edge thread", 1, edge_address, edge_X, edge_Y))
         except:
-            print('thread error')
+            print('send raw thread error')
 
-        ts1 = time.time()
-        trainX = chainer.as_variable(trainX)
-        Y = trainY.astype(np.int32)
-        Y = chainer.as_variable(Y)
-        process_layers = np.arange(device_run_layers+1)
-        if device_run_layers > 0:
-            output = Forward(trainX, process_layers)
-            try:
-                _thread.start_new_thread(send_output_data, ('send output thread', 2, edge_address, output, Y))
-            except:
-                print('send output thread error')
 
-            wait_reply_output()
-            process_layers = np.arange(device_run_layers+1)
-            cal_gradients(output_reply, Y, process_layers)
-        wait_epoch_end()
-        del trainX, trainY, Y
+        process_layers = np.arange(1, device_run_layers+1)
+        output = forward(trainX, process_layers)
+
+        output_reply = send_output_data(edge_address, output, trainY)
+
+        cal_gradients(output_reply, process_layers, trainY)
+
+        for j in process_layers:
+            process_gradients_exchange(j)
+            update_one_layer_parameters(j, total_batch_size)
+
+        wait_threads_complete()
+
+        ts2 = time.time()
+
+        one_epoch_time = (ts2 - ts1) * 1000.
+        print('one epoch training time: ', one_epoch_time)
+
+

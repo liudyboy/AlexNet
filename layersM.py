@@ -20,7 +20,7 @@ import gc
 
 
 class conv2d():
-    def __init__(self, filters, kernel=[2, 2], use_bias=True, stride=(1, 1), padding=None, cover_all=False, activation='relu', name=None, normalization=None, paralle=False):
+    def __init__(self, filters, kernel=[2, 2], use_bias=True, stride=(1, 1), padding=None, cover_all=False, activation='relu', name=None, normalization=None, use_gpu=False):
         """
           Args:
             filters: the number of filters, shape: one int number
@@ -42,7 +42,7 @@ class conv2d():
         self.w = None
         self.b = None
         self.name = name
-        self.paralle = paralle
+        self.use_gpu = use_gpu
 
 
     def forward(self, x):
@@ -63,28 +63,54 @@ class conv2d():
 
 
         self.x = chainer.as_variable(x)
-        self.batch = ((x.shape[0]))
+        self.batch = (x.shape[0])
 
         self.pad = [0, 0]
         if self.padding == 'SAME':
             self.pad[0], self.pad[1] = int(np.ceil((self.w.shape[2] - 1) / 2)), int(np.ceil((self.w.shape[3] - 1) / 2))
-        self.temp_result = F.convolution_2d(self.x, W = self.w, b = self.b, stride = self.stride, pad = self.pad)
-        if self.activation == 'relu':
-            self.result = F.relu(self.temp_result)
-        else:
-            self.result = self.temp_result
+
+        if self.use_gpu is False:
+            self.temp_result = F.convolution_2d(self.x, W = self.w, b = self.b, stride = self.stride, pad = self.pad)
+
+            if self.activation == 'relu':
+                self.result = F.relu(self.temp_result)
+            else:
+                self.result = self.temp_result
 
 
-        if self.normalization == "local_response_normalization":
-            self.normal_result = F.local_response_normalization(self.result)
-            return self.normal_result
-        return self.result
+            if self.normalization == "local_response_normalization":
+                self.normal_result = F.local_response_normalization(self.result)
+                return self.normal_result
+            return self.result
 
-    def backward(self, d_out, update_method='vanilla'):
+        elif self.use_gpu is True:
+            self.x.to_gpu(0)
+            self.w.to_gpu(0)
+            self.b.to_gpu(0)
+
+            self.temp_result = F.convolution_2d(self.x, W = self.w, b = self.b, stride = self.stride, pad = self.pad)
+
+            if self.activation == 'relu':
+                self.result = F.relu(self.temp_result)
+            else:
+                self.result = self.temp_result
+
+
+            if self.normalization == "local_response_normalization":
+                self.normal_result = F.local_response_normalization(self.result)
+                return self.normal_result
+
+            return self.result
+
+    def backward(self, d_out):
         """
           Args:
             d_out: shape need to be the same as the output of the convolution
         """
+        if (self.use_gpu is True):
+            self.result.to_gpu(0)
+            self.normal_result.to_gpu(0)
+            d_out.to_gpu(0)
         if not (d_out.shape) == (self.result.shape):
             raise Exception('Layer: {} apply backward function the d_out shape: {} and the outputs of this layer shape: {} is not match!'.format(self.name, d_out.shape, self.result.shape))
 
@@ -93,6 +119,8 @@ class conv2d():
             d_out = chainer.grad(outputs=[self.normal_result], inputs=[self.result], grad_outputs=[d_out])
             if isinstance(d_out, (list)):
                 d_out = d_out[0]
+        if (self.use_gpu is True) and (backend.get_array_module(self.result).__name__ == 'numpy'):
+            self.result.to_gpu(0)
 
         if self.activation is not None:
             dtemp = chainer.grad(outputs=[self.result], inputs=[self.temp_result], grad_outputs=[d_out])
@@ -102,34 +130,40 @@ class conv2d():
             dw, dbias, dx = chainer.grad(outputs=[self.temp_result], inputs=[self.w, self.b, self.x], grad_outputs=[dtemp])
         else:
             dw, dbias, dx = chainer.grad(outputs=[self.result], inputs=[self.w, self.b, self.x], grad_outputs=[d_out])
-        if self.paralle is False:
-            self.fbatch = Variable(np.array(self.batch, dtype=np.float32))
-            if update_method == 'vanilla':
-                update.vanilla_update(self.w, dw/self.fbatch)
-                update.vanilla_update(self.b, dbias/self.fbatch)
-            del d_out, dw, dbias, dtemp
-        else:
-            self.dw = dw
-            self.dbias = dbias
+
+
+        self.dw = dw
+        self.dbias = dbias
         return dx
 
     def accumulate_params_grad(self, dw, dbias):
         """
         add layer parameters gradient from other device
         """
+        if self.use_gpu is True:
+            dw.to_gpu(0)
+            dbias.to_gpu(0)
+            self.dw.to_gpu(0)
+            self.dbias.to_gpu(0)
         self.dw = dw + self.dw
         self.dbias = dbias + self.dbias
 
-    def update_parameters(self, update_method='vanilla', batch=128):
-            self.fbatch = Variable(np.array(batch, dtype=np.float32))
-            if update_method == 'vanilla':
-                update.vanilla_update(self.w, self.dw/self.fbatch)
-                update.vanilla_update(self.b, self.dbias/self.fbatch)
+    def get_params_grad(self):
+        return self.dw, self.dbias
 
+    def update_parameters(self, batch=None, update_method='vanilla'):
+        if batch is None:
+            batch = self.batch
+        self.fbatch = Variable(np.array(batch, dtype=np.float32))
+        if self.use_gpu is True:
+            self.fbatch.to_gpu(0)
+        if update_method == 'vanilla':
+            update.vanilla_update(self.w, self.dw/self.fbatch)
+            update.vanilla_update(self.b, self.dbias/self.fbatch)
 
 
 class max_pool2d():
-    def __init__(self, ksize, stride=(1, 1), pad=0, cover_all=True, name=None):
+    def __init__(self, ksize, stride=(1, 1), pad=0, cover_all=True, name=None, use_gpu=False):
         """
           Args:
             ksize: pair of ints, size of pooling window
@@ -141,6 +175,7 @@ class max_pool2d():
         self.pad = pad
         self.cover_all = cover_all
         self.name = name
+        self.use_gpu = use_gpu
 
 
     def forward(self, x):
@@ -148,9 +183,10 @@ class max_pool2d():
         self.result = F.max_pooling_2d(self.x, ksize = self.ksize, stride=self.stride, pad = self.pad, cover_all=self.cover_all)
         return self.result
 
-
     def backward(self, d_out):
 
+        if (self.use_gpu is True):
+            self.result.to_gpu(0)
         if not (d_out.shape) == (self.result.shape):
             raise Exception('Layer: {} apply backward function the d_out shape: {} and the outputs of this layer shape: {} is not match!'.format(self.name, d_out.shape, self.result.shape))
 
@@ -161,7 +197,7 @@ class max_pool2d():
         return dx
 
 class dense():
-    def __init__(self, out_size, activation=None, name=None, dropout=None, paralle=False):
+    def __init__(self, out_size, activation=None, name=None, dropout=None, use_gpu=None):
         """
           Args:
             out_size: the output size of full connected layer
@@ -176,7 +212,7 @@ class dense():
         self.activation = activation
         self.name = name
         self.dropout = dropout
-        self.paralle = paralle
+        self.use_gpu = use_gpu
 
     def forward(self, x):
         """
@@ -208,6 +244,11 @@ class dense():
             self.w = chainer.as_variable(w)
             self.b = chainer.as_variable(b)
 
+        if self.use_gpu is True:
+            self.x.to_gpu(0)
+            self.w.to_gpu(0)
+            self.b.to_gpu(0)
+
 
         self.temp_result = F.linear(self.x, self.w, self.b)
 
@@ -222,18 +263,25 @@ class dense():
 
         return self.result
 
-    def backward(self, d_out, update_method='vanilla'):
+    def backward(self, d_out):
 
         if not (d_out.shape) == (self.result.shape):
             raise Exception('Layer: {} apply backward function the d_out shape: {} and the outputs of this layer shape: {} is not match!'.format(self.name, d_out.shape, self.result.shape))
 
+        if self.use_gpu is True:
+            d_out.to_gpu(0)
         if self.dropout is True:
+            if self.use_gpu is True:
+                self.result.to_gpu(0)
+                self.drop_result.to_gpu(0)
             d_out = chainer.grad(outputs=[self.drop_result], inputs=[self.result], grad_outputs=[d_out])
             if isinstance(d_out, (list)):
                 d_out = d_out[0]
 
 
         if self.activation is not None:
+            if (self.use_gpu is True):
+                self.result.to_gpu(0)
             dtemp = chainer.grad(outputs=[self.result], inputs=[self.temp_result], grad_outputs=[d_out])
             if isinstance(dtemp, (list)):
                 dtemp = dtemp[0]
@@ -242,17 +290,13 @@ class dense():
             del dtemp
 
         else:
+            if (self.use_gpu is True):
+                self.result.to_gpu(0)
             dw, dbias, dx = chainer.grad(outputs=[self.result], inputs=[self.w, self.b, self.x], grad_outputs=[d_out])
 
 
-        if self.paralle is False:
-            self.fbatch = chainer.as_variable(np.array(self.batch, dtype=np.float32))
-            if update_method == 'vanilla':
-                update.vanilla_update(self.w, dw / self.fbatch)
-                update.vanilla_update(self.b, dbias / self.fbatch)
-        else:
-            self.dw = dw
-            self.dbias = dbias
+        self.dw = dw
+        self.dbias = dbias
 
         if not (self.init_x.shape == dx.shape):
             dx = dx.reshape(self.init_x.shape)
@@ -265,14 +309,23 @@ class dense():
         """
         add layer parameters gradient from other device
         """
+        if self.use_gpu is True:
+            dw.to_gpu(0)
+            dbias.to_gpu(0)
+            self.dw.to_gpu(0)
+            self.dbias.to_gpu(0)
         self.dw = dw + self.dw
         self.dbias = dbias + self.dbias
 
     def get_params_grad(self):
         return self.dw, self.dbias
 
-    def update_parameters(self, update_method='vanilla', batch=self.batch):
-            self.fbatch = Variable(np.array(batch, dtype=np.float32))
-            if update_method == 'vanilla':
-                update.vanilla_update(self.w, self.dw/self.fbatch)
-                update.vanilla_update(self.b, self.dbias/self.fbatch)
+    def update_parameters(self, update_method='vanilla', batch=None):
+        if batch is None:
+            batch = self.batch
+        self.fbatch = Variable(np.array(batch, dtype=np.float32))
+        if self.use_gpu is True:
+            self.fbatch.to_gpu(0)
+        if update_method == 'vanilla':
+            update.vanilla_update(self.w, self.dw/self.fbatch)
+            update.vanilla_update(self.b, self.dbias/self.fbatch)
