@@ -68,8 +68,8 @@ def get_batch_data(batch_size):
     dataset = labeledImageDataSet('./tiny_train.txt', 'train')
 
     MAX_NUM = 100000    #the total number of image
-    index = np.random.randint(MAX_NUM, size=batch_size) # randomly get the samples
-    # index = np.arange(batch_size)
+    # index = np.random.randint(MAX_NUM, size=batch_size) # randomly get the samples
+    index = np.arange(batch_size)
     X, Y = dataset.get_batch_data(index)
     X = np.transpose(X, (0, 3, 1, 2))
     return X, Y

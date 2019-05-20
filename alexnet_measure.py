@@ -34,7 +34,7 @@ class AlexNet():
 
         self.fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6')
         self.fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7')
-        self.fc8 = layers.dense(1000, activation='relu', name='fc8')
+        self.fc8 = layers.dense(200, activation='relu', name='fc8')
 
         self.max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
         self.max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
@@ -359,7 +359,7 @@ ts1 = time.time()
 start_time = time.ctime(ts1)
 generations = 10
 
-batch_size = 64
+batch_size = 128
 
 alexNet = AlexNet()
 
@@ -374,6 +374,8 @@ for i in range(generations):
 
     trainX, trainY = utils.get_batch_data(batch_size)
     Y = trainY.astype(np.int32)
+
+    ts1 = time.time()
     temp_out = alexNet.forward(trainX)
 
     loss = F.softmax_cross_entropy(temp_out, Y)
@@ -386,6 +388,6 @@ for i in range(generations):
     alexNet.update()
     del trainX, trainY, Y
 
+    ts2 = time.time()
 
-ts2 = time.time()
-print("process time" , ts2 - ts1)
+    print("one epoch process time" , (ts2 - ts1) * 1000.)

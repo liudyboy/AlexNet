@@ -111,28 +111,65 @@ class Connecter(communication_pb2_grpc.CommServicer):
             self.fc8.w, self.fc8.b = chainer.as_variable(self.fc8.w), chainer.as_variable(self.fc8.b)
 
     def cal_forward(self, out, process_layers):
+        print("process layers: ", process_layers)
         if 1 in process_layers:
             out = self.conv1.forward(out)
         if 2 in process_layers:
             out = self.max_pool1.forward(out)
+
+        ts1 = time.time()
         if 3 in process_layers:
             out = self.conv2.forward(out)
+        ts2 = time.time()
+        print("lyaer 3 cost time:", (ts2 -ts1) * 1000)
+
+        ts1 = time.time()
         if 4 in process_layers:
             out = self.max_pool2.forward(out)
+        ts2 = time.time()
+        print("layer 4 cost time: ", (ts2-ts1)*1000.)
+
+        ts1 = time.time()
         if 5 in process_layers:
             out = self.conv3.forward(out)
+        ts2 = time.time()
+        print("layer 5 cost time: ", (ts2-ts1)*1000.)
+
+        ts1 = time.time()
         if 6 in process_layers:
             out = self.conv4.forward(out)
+        ts2 = time.time()
+        print("layer 6 cost time: ", (ts2-ts1)*1000.)
+
+        ts1 = time.time()
         if 7 in process_layers:
             out = self.conv5.forward(out)
+        ts2 = time.time()
+        print("layer 7 cost time: ", (ts2-ts1)*1000.)
+
+        ts1 = time.time()
         if 8 in process_layers:
             out = self.max_pool5.forward(out)
+        ts2 = time.time()
+        print("layer 8 cost time: ", (ts2-ts1)*1000.)
+
+        ts1 = time.time()
         if 9 in process_layers:
             out = self.fc6.forward(out)
+        ts2 = time.time()
+        print("layer 9 cost time: ", (ts2-ts1)*1000.)
+
+        ts1 = time.time()
         if 10 in process_layers:
             out = self.fc7.forward(out)
+        ts2 = time.time()
+        print("layer 10 cost time: ", (ts2-ts1)*1000.)
+
+        ts1 = time.time()
         if 11 in process_layers:
             out = self.fc8.forward(out)
+        ts2 = time.time()
+        print("layer 11 cost time: ", (ts2-ts1)*1000.)
         return out
 
     def cal_gradients(self, d_out, process_layers, Y=None):
@@ -491,13 +528,19 @@ class Connecter(communication_pb2_grpc.CommServicer):
         out = self.cal_forward(input_x, process_layers)
         cloud_send_output = self.get_cloud_output()
         device_send_output = self.get_device_output()
+
+
         self.cloud_batch = cloud_send_output.shape[0]
         self.device_batch = device_send_output.shape[0]
 
         out = np.append(out.array, cloud_send_output.array, axis=0)
         out = np.append(out, device_send_output.array, axis=0)
+
+
+        # ts1 = time.time()
         process_layers = np.arange(self.device_run_layers+1, 12)
         out = self.cal_forward(chainer.as_variable(out), process_layers)
+
 
         # Calculate gradients phase
         all_Y = np.append(self.Y.array, self.cloud_output_y.array, axis=0)
@@ -527,6 +570,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         self.prepared_for_recv_gradients = True
         self.wait_update_parameters_completed()
+
         return
 
 
@@ -576,7 +620,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
         return communication_pb2.RawReply(signal=finsh_signal)
 
     def Log(self, message):
-        print(message)
+        # print(message)
+        pass
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10), options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)])
     communication_pb2_grpc.add_CommServicer_to_server(Connecter(), server)

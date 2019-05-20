@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     device_run_layers, cloud_run_layers = args.args_prase()
     init_layers(np.arange(device_run_layers+1))
-    edge_batch, cloud_batch = 75, 20
+    edge_batch, cloud_batch = 82, 28
     logging.basicConfig()
     generations = 10
     total_batch_size = 128
