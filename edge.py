@@ -337,22 +337,25 @@ class Connecter(communication_pb2_grpc.CommServicer):
         num_layer = pickle.loads(request.layer_num)
         grads_w = chainer.as_variable(pickle.loads(request.grads_w))
         grads_bias = chainer.as_variable(pickle.loads(request.grads_bias))
+        name = pickle.loads(request.name)
 
+        self.Log('{} call get one layer gradients for layer {}'.format(name, num_layer))
+        # ts1 = time.time()
         # wait for edge prepared for receive gradients from others
         while self.prepared_for_recv_gradients == False:
             pass
-            # grads_w = pickle.dumps(np.zeros(1))
-            # grads_bias = pickle.dumps(np.zeros(1))
-            # return communication_pb2.GradsReply(grads_w=grads_w, grads_bias=grads_bias)
-
+        # ts2 = time.time()
+        # self.Log('{} call for layer {} gradients, wait edge prepared for recv gradients time: {}'.format(name, num_layer, (ts2 - ts1) * 1000.))
 
         self.Add_gradients(num_layer, grads_w, grads_bias)
         self.layers_gradients_flag[num_layer] += 1
-        # print('layer ', num_layer, 'come to wait anther send gradients')
+
+
+        ts1 = time.time()
         while self.layers_gradients_flag[num_layer] != self.layers_gradients_flag_target[num_layer]:
             pass
-        # print('layer flag ', num_layer, ' :', self.layers_gradients_flag[num_layer])
-        # print('layer target: ' ,num_layer, ' :', self.layers_gradients_flag_target[num_layer])
+        ts2 = time.time()
+        self.Log('{} call for layer {} gradients, wait another time: {}'.format(name, num_layer, (ts2 - ts1) * 1000.))
         grads_w, grads_bias = self.get_gradients(num_layer)
         grads_w = pickle.dumps(grads_w.array)
         grads_bias = pickle.dumps(grads_bias.array)
@@ -572,7 +575,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
         finsh_signal = pickle.dumps(np.zeros(1))
         return communication_pb2.RawReply(signal=finsh_signal)
 
-
+    def Log(self, message):
+        print(message)
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10), options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)])
     communication_pb2_grpc.add_CommServicer_to_server(Connecter(), server)

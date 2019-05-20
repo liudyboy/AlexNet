@@ -55,13 +55,14 @@ def conn_send_device_output_data(destination, output, Y):
 
 # Send: one layer grad_w and grads_bias, layer number
 # Return: one laeyr grad_w and grads_bias
-def conn_get_gradients(destination, grads_w, grads_bias, layer_num):
+def conn_get_gradients(destination, grads_w, grads_bias, layer_num, name):
     with grpc.insecure_channel(destination, options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)]) as channel:
         stub = communication_pb2_grpc.CommStub(channel)
         grads_w = pickle.dumps(grads_w)
         grads_bias = pickle.dumps(grads_bias)
         layer_num = pickle.dumps(layer_num)
-        recv_data = stub.get_one_layer_gradients(communication_pb2.GradsSend(grads_w=grads_w, grads_bias=grads_bias, layer_num=layer_num))
+        name = pickle.dumps(name)
+        recv_data = stub.get_one_layer_gradients(communication_pb2.GradsSend(grads_w=grads_w, grads_bias=grads_bias, layer_num=layer_num, name=name))
         grads_w = pickle.loads(recv_data.grads_w)
         grads_bias = pickle.loads(recv_data.grads_bias)
     return grads_w, grads_bias

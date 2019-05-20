@@ -226,12 +226,15 @@ def send_output_data(destination, output, Y):
 
 def get_one_layer_gradients(destination, grads_w, grads_bias, layer_num):
     # print('get layer ', layer_num, ' gradients')
-    while True:
-        recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num)
-        if recv_grads_w.shape[0] != 1:
-            break;
+    # while True:
+    #     recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num)
+    #     if recv_grads_w.shape[0] != 1:
+    #         break;
     # print('complete get layer', layer_num, ' gradients')
     # print('layer gradients: ', recv_grads_w.shape)
+    grads_w = chainer.as_variable(grads_w)
+    grads_bias = chainer.as_variable(grads_bias)
+    recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num, 'device')
     return chainer.as_variable(recv_grads_w), chainer.as_variable(recv_grads_bias)
 
 # just in case to wait two new threads complete
@@ -243,7 +246,7 @@ def wait_threads_complete():
 
 
 edge_address = "192.168.1.77:50055"
-cloud_address = "192.168.1.153:50052"
+cloud_address = "192.168.1.70:50052"
 
 if __name__ == "__main__":
 
@@ -279,13 +282,18 @@ if __name__ == "__main__":
         except:
             print('send raw thread error')
 
-
         process_layers = np.arange(1, device_run_layers+1)
         output = forward(trainX, process_layers)
 
+        tts2 = time.time()
+        print('forward cost time: ', (tts2 - ts1) * 1000.)
         output_reply = send_output_data(edge_address, output, trainY)
 
+        tts3 = time.time()
         cal_gradients(output_reply, process_layers, trainY)
+
+        tts4 = time.time()
+        print('cal gradients cost time: ', (tts4 - tts3) * 1000.)
 
         for j in process_layers:
             process_gradients_exchange(j)

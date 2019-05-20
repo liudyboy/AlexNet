@@ -33,6 +33,7 @@ message GradsSend{
    bytes grads_w = 1;
    bytes grads_bias = 2;
    bytes layer_num = 3;
+   bytes name = 4;
 }
 
 message GradsReply{

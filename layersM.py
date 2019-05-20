@@ -109,7 +109,8 @@ class conv2d():
         """
         if (self.use_gpu is True):
             self.result.to_gpu(0)
-            self.normal_result.to_gpu(0)
+            if self.normalization == "local_response_normalization":
+                self.normal_result.to_gpu(0)
             d_out.to_gpu(0)
         if not (d_out.shape) == (self.result.shape):
             raise Exception('Layer: {} apply backward function the d_out shape: {} and the outputs of this layer shape: {} is not match!'.format(self.name, d_out.shape, self.result.shape))

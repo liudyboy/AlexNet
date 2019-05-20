@@ -41,6 +41,7 @@ class AlexNet():
         self.max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
 
     def forward(self, x):
+
         out = self.conv1.forward(x)
         out = self.max_pool1.forward(out)
 
@@ -69,12 +70,13 @@ class AlexNet():
         return out
 
     def backward(self, loss, temp_out):
+
+
         d_out = chainer.grad([loss], [temp_out])
 
         if isinstance(d_out, (list)):
             d_out = d_out[0]
         d_out = self.fc8.backward(d_out)
-        
 
         d_out = self.fc7.backward(d_out)
         d_out = self.fc6.backward(d_out)
@@ -104,12 +106,11 @@ class AlexNet():
 
 ts1 = time.time()
 start_time = time.ctime(ts1)
-generations = 100
+generations = 1
 
 batch_size = 128
 
 alexNet = AlexNet()
-
 
 for i in range(generations):
 

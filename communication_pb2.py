@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='communcation',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x13\x63ommunication.proto\x12\x0c\x63ommuncation\"#\n\x07RawSend\x12\r\n\x05raw_x\x18\x01 \x01(\x0c\x12\t\n\x01Y\x18\x02 \x01(\x0c\"\x1a\n\x08RawReply\x12\x0e\n\x06signal\x18\x01 \x01(\x0c\"\'\n\nOutputSend\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\t\n\x01Y\x18\x02 \x01(\x0c\"\x1c\n\x0bOutputReply\x12\r\n\x05grads\x18\x01 \x01(\x0c\"C\n\tGradsSend\x12\x0f\n\x07grads_w\x18\x01 \x01(\x0c\x12\x12\n\ngrads_bias\x18\x02 \x01(\x0c\x12\x11\n\tlayer_num\x18\x03 \x01(\x0c\"1\n\nGradsReply\x12\x0f\n\x07grads_w\x18\x01 \x01(\x0c\x12\x12\n\ngrads_bias\x18\x02 \x01(\x0c\"\x18\n\x06Singal\x12\x0e\n\x06singal\x18\x01 \x01(\x0c\x32\xd3\x03\n\x04\x43omm\x12\x43\n\x10process_raw_data\x12\x15.communcation.RawSend\x1a\x16.communcation.RawReply\"\x00\x12N\n\x15process_device_output\x12\x18.communcation.OutputSend\x1a\x19.communcation.OutputReply\"\x00\x12N\n\x17get_one_layer_gradients\x12\x17.communcation.GradsSend\x1a\x18.communcation.GradsReply\"\x00\x12M\n\x14process_cloud_output\x12\x18.communcation.OutputSend\x1a\x19.communcation.OutputReply\"\x00\x12H\n\x18get_singal_for_new_epoch\x12\x14.communcation.Singal\x1a\x14.communcation.Singal\"\x00\x12M\n\x1dget_singal_for_finished_epoch\x12\x14.communcation.Singal\x1a\x14.communcation.Singal\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x13\x63ommunication.proto\x12\x0c\x63ommuncation\"#\n\x07RawSend\x12\r\n\x05raw_x\x18\x01 \x01(\x0c\x12\t\n\x01Y\x18\x02 \x01(\x0c\"\x1a\n\x08RawReply\x12\x0e\n\x06signal\x18\x01 \x01(\x0c\"\'\n\nOutputSend\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\t\n\x01Y\x18\x02 \x01(\x0c\"\x1c\n\x0bOutputReply\x12\r\n\x05grads\x18\x01 \x01(\x0c\"Q\n\tGradsSend\x12\x0f\n\x07grads_w\x18\x01 \x01(\x0c\x12\x12\n\ngrads_bias\x18\x02 \x01(\x0c\x12\x11\n\tlayer_num\x18\x03 \x01(\x0c\x12\x0c\n\x04name\x18\x04 \x01(\x0c\"1\n\nGradsReply\x12\x0f\n\x07grads_w\x18\x01 \x01(\x0c\x12\x12\n\ngrads_bias\x18\x02 \x01(\x0c\"\x18\n\x06Singal\x12\x0e\n\x06singal\x18\x01 \x01(\x0c\x32\xd3\x03\n\x04\x43omm\x12\x43\n\x10process_raw_data\x12\x15.communcation.RawSend\x1a\x16.communcation.RawReply\"\x00\x12N\n\x15process_device_output\x12\x18.communcation.OutputSend\x1a\x19.communcation.OutputReply\"\x00\x12N\n\x17get_one_layer_gradients\x12\x17.communcation.GradsSend\x1a\x18.communcation.GradsReply\"\x00\x12M\n\x14process_cloud_output\x12\x18.communcation.OutputSend\x1a\x19.communcation.OutputReply\"\x00\x12H\n\x18get_singal_for_new_epoch\x12\x14.communcation.Singal\x1a\x14.communcation.Singal\"\x00\x12M\n\x1dget_singal_for_finished_epoch\x12\x14.communcation.Singal\x1a\x14.communcation.Singal\"\x00\x62\x06proto3')
 )
 
 
@@ -191,6 +191,13 @@ _GRADSSEND = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='name', full_name='communcation.GradsSend.name', index=3,
+      number=4, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -204,7 +211,7 @@ _GRADSSEND = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=173,
-  serialized_end=240,
+  serialized_end=254,
 )
 
 
@@ -241,8 +248,8 @@ _GRADSREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=242,
-  serialized_end=291,
+  serialized_start=256,
+  serialized_end=305,
 )
 
 
@@ -272,8 +279,8 @@ _SINGAL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=293,
-  serialized_end=317,
+  serialized_start=307,
+  serialized_end=331,
 )
 
 DESCRIPTOR.message_types_by_name['RawSend'] = _RAWSEND
@@ -342,8 +349,8 @@ _COMM = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=320,
-  serialized_end=787,
+  serialized_start=334,
+  serialized_end=801,
   methods=[
   _descriptor.MethodDescriptor(
     name='process_raw_data',

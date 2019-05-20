@@ -35,8 +35,8 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 class Connecter(communication_pb2_grpc.CommServicer):
 
+    init_layers_flag = False
     def init_variables(self):
-        self.init_layers_flag = False
         self.TOTAL_BATCH = 128
         self.edge_address = '192.168.1.77:50055'
 
@@ -155,12 +155,15 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
     def get_one_layer_gradients(self, destination, grads_w, grads_bias, layer_num):
         # print('get layer ', layer_num, ' gradients')
-        while True:
-            recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num)
-            if recv_grads_w.shape[0] != 1:
-                break
+        # while True:
+        #     recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num)
+        #     if recv_grads_w.shape[0] != 1:
+        #         break
         # print('get layer ', layer_num, 'gradients completed!')
         # print('gradients: ', recv_grads_w.shape)
+        grads_w = chainer.as_variable(grads_w)
+        grads_bias = chainer.as_variable(grads_bias)
+        recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w.array, grads_bias.array, layer_num, 'cloud')
         return chainer.as_variable(recv_grads_w), chainer.as_variable(recv_grads_bias)
 
 
@@ -276,11 +279,14 @@ class Connecter(communication_pb2_grpc.CommServicer):
     # Function call by device
     # Params: raw_data_x, layer_y
     def process_raw_data(self, request, context):
-        self.init_variables()
         if self.init_layers_flag is False:
+            self.Log('Initial Model layers')
             self.device_run_layers, self.cloud_run_layers = args.args_prase()
             process_layers = np.arange(self.cloud_run_layers+1)
             self.init_layers(process_layers)
+        self.init_variables()
+
+
         self.raw_input = chainer.as_variable(pickle.loads(request.raw_x))
         self.Y = chainer.as_variable(pickle.loads(request.Y))
         process_layers = np.arange(1, self.cloud_run_layers+1)
@@ -291,17 +297,25 @@ class Connecter(communication_pb2_grpc.CommServicer):
             pass
 
 
+
         output_reply = self.send_output_data(self.edge_address, output, self.Y)
+
+
+
         self.cal_gradients(output_reply, process_layers, self.Y)
 
         for j in process_layers:
+            ts1 = time.time()
             self.process_gradients_exchange(j)
             self.update_one_layer_parameters(j, self.TOTAL_BATCH)
+            ts2 = time.time()
+            self.Log('update {} layer cost time: {}'.format(j, (ts2 - ts1) * 1000.))
 
 
         finsh_signal = pickle.dumps(np.zeros(1))
         return communication_pb2.RawReply(signal=finsh_signal)
-
+    def Log(self, message):
+        print(message)
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10), options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)])
     communication_pb2_grpc.add_CommServicer_to_server(Connecter(), server)
