@@ -112,11 +112,19 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
     def cal_forward(self, out, process_layers):
         print("process layers: ", process_layers)
+        ts3 = time.time()
+
+        ts1 = time.time()
         if 1 in process_layers:
             out = self.conv1.forward(out)
+        ts2 = time.time()
+        print("lyaer 1 cost time:", (ts2 -ts1) * 1000)
+
+        ts1 = time.time()
         if 2 in process_layers:
             out = self.max_pool1.forward(out)
-
+        ts2 = time.time()
+        print("lyaer 2 cost time:", (ts2 -ts1) * 1000)
         ts1 = time.time()
         if 3 in process_layers:
             out = self.conv2.forward(out)
@@ -170,6 +178,9 @@ class Connecter(communication_pb2_grpc.CommServicer):
             out = self.fc8.forward(out)
         ts2 = time.time()
         print("layer 11 cost time: ", (ts2-ts1)*1000.)
+
+        ts4 = time.time()
+        print("total forward time:", (ts4 - ts3) * 1000.)
         return out
 
     def cal_gradients(self, d_out, process_layers, Y=None):
@@ -413,25 +424,25 @@ class Connecter(communication_pb2_grpc.CommServicer):
         # Forward phase
         process_layers = np.arange(self.device_run_layers+1)
         out = self.cal_forward(input_x, process_layers)
-        device_send_output = self.get_device_output()
-        self.device_batch = device_send_output.shape[0]                   #record the device training batch
-        # print('finish function get_device_output')
-        out = np.append(out.array, device_send_output.array, axis=0)
+        if self.device_run_layers != 0:
+            device_send_output = self.get_device_output()
+            self.device_batch = device_send_output.shape[0]                   #record the device training batch
+            out = np.append(out.array, device_send_output.array, axis=0)
         process_layers = np.arange(self.device_run_layers+1, self.cloud_run_layers+1)
         out = self.cal_forward(chainer.as_variable(out), process_layers)
-        # print('start function get_cloud_output')
         cloud_send_output = self.get_cloud_output()
         self.cloud_batch = cloud_send_output.shape[0]                # record the cloud  training batch
 
-        # print('finish function get_cloud_output')
         out = np.append(out.array, cloud_send_output.array, axis=0)
         process_layers = np.arange(self.cloud_run_layers+1, 12)
         out = self.cal_forward(chainer.as_variable(out), process_layers)
 
-        # print('start calculate gradeints phase')
         # Calculate gradiens phase
-        all_Y = np.append(self.Y.array, self.device_output_y.array, axis=0)
-        all_Y = np.append(all_Y, self.cloud_output_y.array, axis=0)
+        if self.device_run_layers != 0:
+            all_Y = np.append(self.Y.array, self.device_output_y.array, axis=0)
+            all_Y = np.append(all_Y, self.cloud_output_y.array, axis=0)
+        else:
+            all_Y = np.append(self.Y.array, self.cloud_output_y.array, axis=0)
 
         process_layers = np.arange(self.cloud_run_layers+1, 12)
         out = self.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
@@ -447,17 +458,16 @@ class Connecter(communication_pb2_grpc.CommServicer):
         process_layers = np.arange(self.device_run_layers+1, self.cloud_run_layers+1)
         out = self.cal_gradients(out, process_layers)
 
-        # print('run before device gradeints flag: ', self.device_output_gradients_flag)
         # spilt the device gradiens
-        batch_size = out.shape[0]
-        self.device_output_grads = out[batch_size-self.device_batch:]
-        out = out[:batch_size-self.device_batch]
-        self.device_output_gradients_flag = True
+        if self.device_run_layers != 0:
+            batch_size = out.shape[0]
+            self.device_output_grads = out[batch_size-self.device_batch:]
+            out = out[:batch_size-self.device_batch]
+            self.device_output_gradients_flag = True
 
-        # print('run after device gradeints flag: ', self.device_output_gradients_flag)
-        # continue calculate gradients
-        process_layers = np.arange(self.device_run_layers+1)
-        out = self.cal_gradients(out, process_layers)
+            # continue calculate gradients
+            process_layers = np.arange(self.device_run_layers+1)
+            out = self.cal_gradients(out, process_layers)
 
         # update parameters phase
         process_layers = np.arange(self.cloud_run_layers+1, 12)
@@ -473,10 +483,12 @@ class Connecter(communication_pb2_grpc.CommServicer):
         # Forward phase
         process_layers = np.arange(self.cloud_run_layers+1)
         out = self.cal_forward(input_x, process_layers)
-        cloud_send_output = self.get_cloud_output()
-        self.cloud_batch = cloud_send_output.shape[0]
 
-        out = np.append(out.array, cloud_send_output.array, axis=0)
+        if self.cloud_run_layers != 0:
+            cloud_send_output = self.get_cloud_output()
+            self.cloud_batch = cloud_send_output.shape[0]
+            out = np.append(out.array, cloud_send_output.array, axis=0)
+
         process_layers = np.arange(self.cloud_run_layers+1, self.device_run_layers+1)
         out = self.cal_forward(chainer.as_variable(out), process_layers)
 
@@ -488,8 +500,12 @@ class Connecter(communication_pb2_grpc.CommServicer):
         out = self.cal_forward(chainer.as_variable(out), process_layers)
 
         # Calculate gradients phase
-        all_Y = np.append(self.Y.array, self.cloud_output_y.array, axis=0)
-        all_Y = np.append(all_Y, self.device_output_y.array, axis=0)
+        if self.cloud_run_layers != 0:
+            all_Y = np.append(self.Y.array, self.cloud_output_y.array, axis=0)
+            all_Y = np.append(all_Y, self.device_output_y.array, axis=0)
+        else:
+            all_Y = np.append(self.Y.array, self.device_output_y.array, axis=0)
+
 
         process_layers = np.arange(self.device_run_layers+1, 12)
         out = self.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
@@ -505,14 +521,15 @@ class Connecter(communication_pb2_grpc.CommServicer):
         out = self.cal_gradients(out, process_layers)
 
         # spilt the cloud gradients
-        batch_size = out.shape[0]
-        self.cloud_output_grads = out[batch_size-self.cloud_batch:]
-        out = out[:batch_size-self.cloud_batch]
-        self.cloud_output_gradients_flag = True
+        if self.cloud_run_layers != 0:
+            batch_size = out.shape[0]
+            self.cloud_output_grads = out[batch_size-self.cloud_batch:]
+            out = out[:batch_size-self.cloud_batch]
+            self.cloud_output_gradients_flag = True
 
-        #continue calculate gradients
-        process_layers = np.arange(self.cloud_run_layers+1)
-        out = self.cal_gradients(out, process_layers)
+            #continue calculate gradients
+            process_layers = np.arange(self.cloud_run_layers+1)
+            out = self.cal_gradients(out, process_layers)
 
         # update parameters phase
         process_layers = np.arange(self.device_run_layers+1, 12)
@@ -522,19 +539,19 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.wait_update_parameters_completed()
         return
 
-    def device_equal_cloud(self, input_x, label):
+    def device_equal_cloud(self, out, label):
         # Forward phase
-        process_layers = np.arange(self.device_run_layers+1)
-        out = self.cal_forward(input_x, process_layers)
-        cloud_send_output = self.get_cloud_output()
-        device_send_output = self.get_device_output()
+        if self.device_run_layers != 0 and self.cloud_run_layers != 0:
+            process_layers = np.arange(self.device_run_layers+1)
+            out = self.cal_forward(out, process_layers)
+            cloud_send_output = self.get_cloud_output()
+            device_send_output = self.get_device_output()
 
+            self.cloud_batch = cloud_send_output.shape[0]
+            self.device_batch = device_send_output.shape[0]
 
-        self.cloud_batch = cloud_send_output.shape[0]
-        self.device_batch = device_send_output.shape[0]
-
-        out = np.append(out.array, cloud_send_output.array, axis=0)
-        out = np.append(out, device_send_output.array, axis=0)
+            out = np.append(out.array, cloud_send_output.array, axis=0)
+            out = np.append(out, device_send_output.array, axis=0)
 
 
         # ts1 = time.time()
@@ -543,26 +560,30 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
         # Calculate gradients phase
-        all_Y = np.append(self.Y.array, self.cloud_output_y.array, axis=0)
-        all_Y = np.append(all_Y, self.device_output_y.array, axis=0)
 
+        if self.device_run_layers != 0 and self.cloud_run_layers != 0:
+            all_Y = np.append(self.Y.array, self.cloud_output_y.array, axis=0)
+            all_Y = np.append(all_Y, self.device_output_y.array, axis=0)
+        else:
+            all_Y = self.Y.array
         process_layers = np.arange(self.device_run_layers+1, 12)
         out = self.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
 
         # Spilt gradients for cloud and device
-        batch_size = out.shape[0]
-        self.device_output_grads = out[batch_size-self.device_batch:]
-        out = out[:batch_size-self.device_batch]
-        self.device_output_gradients_flag = True
+        if self.device_run_layers != 0 and self.cloud_run_layers != 0:
+            batch_size = out.shape[0]
+            self.device_output_grads = out[batch_size-self.device_batch:]
+            out = out[:batch_size-self.device_batch]
+            self.device_output_gradients_flag = True
 
-        batch_size = out.shape[0]
-        self.cloud_output_grads = out[batch_size-self.cloud_batch:]
-        out = out[:batch_size-self.cloud_batch]
-        self.cloud_output_gradients_flag = True
+            batch_size = out.shape[0]
+            self.cloud_output_grads = out[batch_size-self.cloud_batch:]
+            out = out[:batch_size-self.cloud_batch]
+            self.cloud_output_gradients_flag = True
 
-        # Continue calculate gradients
-        process_layers = np.arange(self.device_run_layers+1)
-        out = self.cal_gradients(out, process_layers)
+            # Continue calculate gradients
+            process_layers = np.arange(self.device_run_layers+1)
+            out = self.cal_gradients(out, process_layers)
 
         # Update parameters phase
         process_layers = np.arange(self.device_run_layers+1, 12)
@@ -602,7 +623,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
     def process_raw_data(self, request, context):
         if self.init_layers_flag is False:
             print('Initial Model layers')
-            self.device_run_layers, self.cloud_run_layers = args.args_prase()
+            my_args = args.args_prase()
+            self.device_run_layers, self.cloud_run_layers = my_args.M1, my_args.M2
             edge_run_layers = 11
             self.process_layers = np.arange(edge_run_layers+1)
             self.init_layers(self.process_layers)

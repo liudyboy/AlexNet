@@ -238,9 +238,12 @@ def get_one_layer_gradients(destination, grads_w, grads_bias, layer_num):
     return chainer.as_variable(recv_grads_w), chainer.as_variable(recv_grads_bias)
 
 # just in case to wait two new threads complete
-def wait_threads_complete():
+def wait_threads_complete(cloud):
+    target = 1
+    if cloud != 0:
+        target += 1
     print('wait threads complete')
-    while finish_flag is not 2:
+    while finish_flag is not target:
         pass
     print('one epoch training completed')
 
@@ -249,10 +252,10 @@ edge_address = "192.168.1.77:50055"
 cloud_address = "192.168.1.70:50052"
 
 if __name__ == "__main__":
-
-    device_run_layers, cloud_run_layers = args.args_prase()
+    my_args = args.init_args()
+    device_run_layers, cloud_run_layers = my_args.M1, my_args.M2
     init_layers(np.arange(device_run_layers+1))
-    edge_batch, cloud_batch = 82, 28
+    edge_batch, cloud_batch = 126, 1
     logging.basicConfig()
     generations = 10
     total_batch_size = 128
@@ -277,29 +280,30 @@ if __name__ == "__main__":
         trainY = trainY[:batch_size-edge_batch]
 
         try:
-            _thread.start_new_thread(send_raw_data, ("send cloud thread", 0, cloud_address, cloud_X, cloud_Y))
+            if cloud_run_layers != 0:
+                _thread.start_new_thread(send_raw_data, ("send cloud thread", 0, cloud_address, cloud_X, cloud_Y))
             _thread.start_new_thread(send_raw_data, ("send edge thread", 1, edge_address, edge_X, edge_Y))
         except:
             print('send raw thread error')
+        if device_run_layers != 0:
+            process_layers = np.arange(1, device_run_layers+1)
+            output = forward(trainX, process_layers)
 
-        process_layers = np.arange(1, device_run_layers+1)
-        output = forward(trainX, process_layers)
+            tts2 = time.time()
+            print('forward cost time: ', (tts2 - ts1) * 1000.)
+            output_reply = send_output_data(edge_address, output, trainY)
 
-        tts2 = time.time()
-        print('forward cost time: ', (tts2 - ts1) * 1000.)
-        output_reply = send_output_data(edge_address, output, trainY)
+            tts3 = time.time()
+            cal_gradients(output_reply, process_layers, trainY)
 
-        tts3 = time.time()
-        cal_gradients(output_reply, process_layers, trainY)
+            tts4 = time.time()
+            print('cal gradients cost time: ', (tts4 - tts3) * 1000.)
 
-        tts4 = time.time()
-        print('cal gradients cost time: ', (tts4 - tts3) * 1000.)
+            for j in process_layers:
+                process_gradients_exchange(j)
+                update_one_layer_parameters(j, total_batch_size)
 
-        for j in process_layers:
-            process_gradients_exchange(j)
-            update_one_layer_parameters(j, total_batch_size)
-
-        wait_threads_complete()
+        wait_threads_complete(cloud_run_layers)
 
         ts2 = time.time()
 

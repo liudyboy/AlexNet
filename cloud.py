@@ -281,7 +281,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
     def process_raw_data(self, request, context):
         if self.init_layers_flag is False:
             self.Log('Initial Model layers')
-            self.device_run_layers, self.cloud_run_layers = args.args_prase()
+            my_args = args.args_prase()
+            self.device_run_layers, self.cloud_run_layers = my_args.M1, my_args.M2
             process_layers = np.arange(self.cloud_run_layers+1)
             self.init_layers(process_layers)
         self.init_variables()
