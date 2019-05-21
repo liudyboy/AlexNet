@@ -185,7 +185,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
     def cal_gradients(self, d_out, process_layers, Y=None):
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 11 in process_layers:
             loss = F.softmax_cross_entropy(d_out, Y)
             accuracy = F.accuracy(d_out, Y)
@@ -196,84 +196,117 @@ class Connecter(communication_pb2_grpc.CommServicer):
                 d_out = d_out[0]
             d_out = self.fc8.backward(d_out)
 
-        ts2 = time.time()
-        print("cal gradients layer 11 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 11 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 10 in process_layers:
             d_out = self.fc7.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 10 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 10 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 9 in process_layers:
             d_out = self.fc6.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 9 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 9 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 8 in process_layers:
             d_out = self.max_pool5.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 8 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 8 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 7 in process_layers:
             d_out = self.conv5.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 7 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 7 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 6 in process_layers:
             d_out = self.conv4.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 6 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 6 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 5 in process_layers:
             d_out = self.conv3.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 5 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 5 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 4 in process_layers:
             d_out = self.max_pool2.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 4 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 4 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 3 in process_layers:
             d_out = self.conv2.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 3 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 3 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 2 in process_layers:
             d_out = self.max_pool1.backward(d_out)
-        ts2 = time.time()
-        print("cal gradients layer 2 time: ", (ts2 - ts1) * 1000.)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("cal gradients layer 2 time: ", (ts2 - ts1) * 1000.)
+        # ts1 = time.time()
         if 1 in process_layers:
             d_out = self.conv1.backward(d_out)
 
-        ts2 = time.time()
-        print("cal gradients layer 1 time: ", (ts2 - ts1) * 1000.)
+        # ts2 = time.time()
+        # print("cal gradients layer 1 time: ", (ts2 - ts1) * 1000.)
         return d_out
 
     def update_layers_parameters(self, process_layers, batch_size):
+        ts1 = time.time()
         if 1 in process_layers:
             self.conv1.update_parameters(batch=batch_size)
+        ts2 = time.time()
+        print("update layer 1 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 2 in process_layers:
             pass          # it is maxpool layer needn't exchange gradients
+        ts2 = time.time()
+        print("update layer 2 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 3 in process_layers:
             self.conv2.update_parameters(batch=batch_size)
+        ts2 = time.time()
+        print("update layer 3 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 4 in process_layers:
             pass          # it is maxpool layer needn't exchange gradients
+        ts2 = time.time()
+        print("update layer 4 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 5 in process_layers:
             self.conv3.update_parameters(batch=batch_size)
+        ts2 = time.time()
+        print("update layer 5 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 6 in process_layers:
             self.conv4.update_parameters(batch=batch_size)
+        ts2 = time.time()
+        print("update layer 6 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 7 in process_layers:
             self.conv5.update_parameters(batch=batch_size)
+        ts2 = time.time()
+        print("update layer 7 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 8 in process_layers:
             pass          # it is maxpool layer needn't exchange gradients
+        ts2 = time.time()
+        print("update layer 8 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 9 in process_layers:
             self.fc6.update_parameters(batch=batch_size)
+        ts2 = time.time()
+        print("update layer 9 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 10 in process_layers:
             self.fc7.update_parameters(batch=batch_size)
+        ts2 = time.time()
+        print("update layer 10 time:", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 11 in process_layers:
             self.fc8.update_parameters(batch=batch_size)
+        ts2 = time.time()
+        print("update layer 11 time:", (ts2 - ts1) * 1000.)
         return
 
     def update_one_layer_parameters(self, layer_num, batch_size):
