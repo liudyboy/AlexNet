@@ -234,7 +234,7 @@ def get_one_layer_gradients(destination, grads_w, grads_bias, layer_num):
     # print('layer gradients: ', recv_grads_w.shape)
     grads_w = chainer.as_variable(grads_w)
     grads_bias = chainer.as_variable(grads_bias)
-    recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num, 'device')
+    recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w.array, grads_bias.array, layer_num, 'device')
     return chainer.as_variable(recv_grads_w), chainer.as_variable(recv_grads_bias)
 
 # just in case to wait two new threads complete

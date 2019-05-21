@@ -225,16 +225,9 @@ def send_output_data(destination, output, Y):
     return chainer.as_variable(reply)
 
 def get_one_layer_gradients(destination, grads_w, grads_bias, layer_num):
-    # print('get layer ', layer_num, ' gradients')
-    # while True:
-    #     recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num)
-    #     if recv_grads_w.shape[0] != 1:
-    #         break;
-    # print('complete get layer', layer_num, ' gradients')
-    # print('layer gradients: ', recv_grads_w.shape)
     grads_w = chainer.as_variable(grads_w)
     grads_bias = chainer.as_variable(grads_bias)
-    recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num, 'device')
+    recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w.array, grads_bias.array, layer_num, 'device')
     return chainer.as_variable(recv_grads_w), chainer.as_variable(recv_grads_bias)
 
 # just in case to wait two new threads complete
@@ -251,14 +244,14 @@ def wait_threads_complete(cloud):
 # edge_address = "192.168.1.77:50055"
 # cloud_address = "192.168.1.70:50052"
 
-cloud_address = "192.168.1.77:50052"
+cloud_address = "192.168.1.77:50055"
 edge_address = "192.168.1.70:50055"
 
 if __name__ == "__main__":
     my_args = args.init_args()
     device_run_layers, cloud_run_layers = my_args.M1, my_args.M2
     init_layers(np.arange(device_run_layers+1))
-    edge_batch, cloud_batch = 126, 1
+    edge_batch, cloud_batch = 53, 48
     logging.basicConfig()
     generations = 10
     total_batch_size = 128

@@ -36,6 +36,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
     init_layers_flag = False
     ready_for_new_epoch = False
     finished_epoch = False
+    use_gpu = True
     def init_variables(self):
         self.TOTAL_BATCH_SZIE = 128
         self.device_output_flag = False
@@ -58,63 +59,65 @@ class Connecter(communication_pb2_grpc.CommServicer):
             if i not in [2, 4, 8]:
                 self.layers_gradients_flag_target[i] += 1
 
-    # initial needed process layers
+
     def init_layers(self, process_layers):
         self.init_layers_flag = True
         conv_stride = [4, 4]
 
         if 1 in process_layers:
-            self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride)
+            self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=conv_stride, use_gpu=True)
             c = np.load("init_wb/conv1.npz")
             self.conv1.w, self.conv1.b = c['w'], c['b']
             self.conv1.w, self.conv1.b = chainer.as_variable(self.conv1.w), chainer.as_variable(self.conv1.b)
         if 2 in process_layers:
-            self.max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+            self.max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2], use_gpu=True)
         if 3 in process_layers:
-            self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1])
+            self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1], use_gpu=True)
             c = np.load("init_wb/conv2.npz")
             self.conv2.w, self.conv2.b = c['w'], c['b']
             self.conv2.w, self.conv2.b = chainer.as_variable(self.conv2.w), chainer.as_variable(self.conv2.b)
         if 4 in process_layers:
-            self.max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+            self.max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2], use_gpu=True)
         if 5 in process_layers:
-            self.conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1])
+            self.conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1], use_gpu=True)
             c = np.load("init_wb/conv3.npz")
             self.conv3.w, self.conv3.b = c['w'], c['b']
             self.conv3.w, self.conv3.b = chainer.as_variable(self.conv3.w), chainer.as_variable(self.conv3.b)
         if 6 in process_layers:
-            self.conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1])
+            self.conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1], use_gpu=True)
             c = np.load("init_wb/conv4.npz")
             self.conv4.w, self.conv4.b = c['w'], c['b']
             self.conv4.w, self.conv4.b = chainer.as_variable(self.conv4.w), chainer.as_variable(self.conv4.b)
         if 7 in process_layers:
-            self.conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1])
+            self.conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1], use_gpu=True)
             c = np.load("init_wb/conv5.npz")
             self.conv5.w, self.conv5.b = c['w'], c['b']
             self.conv5.w, self.conv5.b = chainer.as_variable(self.conv5.w), chainer.as_variable(self.conv5.b)
         if 8 in process_layers:
-            self.max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2])
+            self.max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2], use_gpu=True)
         if 9 in process_layers:
-            self.fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6')
+            self.fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6', use_gpu=True)
             c = np.load("init_wb/fc6.npz")
             self.fc6.w, self.fc6.b = c['w'], c['b']
             self.fc6.w, self.fc6.b = chainer.as_variable(self.fc6.w), chainer.as_variable(self.fc6.b)
         if 10 in process_layers:
-            self.fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7')
+            self.fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', use_gpu=True)
             c = np.load("init_wb/fc7.npz")
             self.fc7.w, self.fc7.b = c['w'], c['b']
             self.fc7.w, self.fc7.b = chainer.as_variable(self.fc7.w), chainer.as_variable(self.fc7.b)
         if 11 in process_layers:
-            self.fc8 = layers.dense(200, activation='relu', name='fc8')
+            self.fc8 = layers.dense(200, activation='relu', name='fc8', use_gpu=True)
             c = np.load("init_wb/fc8.npz")
             self.fc8.w, self.fc8.b = c['w'], c['b']
             self.fc8.w, self.fc8.b = chainer.as_variable(self.fc8.w), chainer.as_variable(self.fc8.b)
 
+        return
     def cal_forward(self, out, process_layers):
-        # print("process layers: ", process_layers)
-        # ts3 = time.time()
+        print("process layers: ", process_layers)
+        ts3 = time.time()
 
         # ts1 = time.time()
+        out.to_gpu()
         if 1 in process_layers:
             out = self.conv1.forward(out)
         # ts2 = time.time()
@@ -179,12 +182,15 @@ class Connecter(communication_pb2_grpc.CommServicer):
         # ts2 = time.time()
         # print("layer 11 cost time: ", (ts2-ts1)*1000.)
 
-        # ts4 = time.time()
-        # print("total forward time:", (ts4 - ts3) * 1000.)
+        ts4 = time.time()
+        print("total forward time:", (ts4 - ts3) * 1000.)
         return out
 
     def cal_gradients(self, d_out, process_layers, Y=None):
-
+        print("process layer: ", process_layers)
+        ts1 = time.time()
+        if self.use_gpu:
+            d_out.to_gpu()
         # ts1 = time.time()
         if 11 in process_layers:
             loss = F.softmax_cross_entropy(d_out, Y)
@@ -249,6 +255,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         # ts2 = time.time()
         # print("cal gradients layer 1 time: ", (ts2 - ts1) * 1000.)
+        ts2 = time.time()
+        print("cal gradients time:", (ts2 - ts1) * 1000.)
         return d_out
 
     def update_layers_parameters(self, process_layers, batch_size):
@@ -358,7 +366,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.device_output_y = chainer.as_variable(pickle.loads(request.Y))
         self.device_output_flag = True
         grads = self.get_device_output_gradients()
-
+        grads.to_cpu()
         grads = pickle.dumps(grads.array)
         return communication_pb2.OutputReply(grads=grads)
 
@@ -381,13 +389,16 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.cloud_output_flag = True
         # print('function process_cloud_output set cloud_output flag: ', self.cloud_output_flag)
         grads = self.get_cloud_output_gradients()
-
+        grads.to_cpu()
         grads = pickle.dumps(grads.array)
         return communication_pb2.OutputReply(grads=grads)
 
 
 
     def Add_gradients(self, layer_num, grads_w, grads_bias):
+        if self.use_gpu:
+            grads_w.to_gpu()
+            grads_bias.to_gpu()
         if 1 == layer_num:
             self.conv1.accumulate_params_grad(grads_w, grads_bias)
         if 2 == layer_num:
@@ -456,13 +467,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
         name = pickle.loads(request.name)
 
         self.Log('{} call get one layer gradients for layer {}'.format(name, num_layer))
-        # ts1 = time.time()
-        # wait for edge prepared for receive gradients from others
         while self.prepared_for_recv_gradients == False:
             pass
-        # ts2 = time.time()
-        # self.Log('{} call for layer {} gradients, wait edge prepared for recv gradients time: {}'.format(name, num_layer, (ts2 - ts1) * 1000.))
-
         self.Add_gradients(num_layer, grads_w, grads_bias)
         self.layers_gradients_flag[num_layer] += 1
 
@@ -473,6 +479,9 @@ class Connecter(communication_pb2_grpc.CommServicer):
         ts2 = time.time()
         self.Log('{} call for layer {} gradients, wait another time: {}'.format(name, num_layer, (ts2 - ts1) * 1000.))
         grads_w, grads_bias = self.get_gradients(num_layer)
+        grads_w.to_cpu()
+        grads_bias.to_cpu()
+
         grads_w = pickle.dumps(grads_w.array)
         grads_bias = pickle.dumps(grads_bias.array)
 
@@ -495,15 +504,22 @@ class Connecter(communication_pb2_grpc.CommServicer):
         if self.device_run_layers != 0:
             device_send_output = self.get_device_output()
             self.device_batch = device_send_output.shape[0]                   #record the device training batch
+            out.to_cpu()
             out = np.append(out.array, device_send_output.array, axis=0)
+            out = chainer.as_variable(out)
+            out.to_gpu()
+
         process_layers = np.arange(self.device_run_layers+1, self.cloud_run_layers+1)
-        out = self.cal_forward(chainer.as_variable(out), process_layers)
+        out = self.cal_forward(out, process_layers)
         cloud_send_output = self.get_cloud_output()
         self.cloud_batch = cloud_send_output.shape[0]                # record the cloud  training batch
-
+        out.to_cpu()
         out = np.append(out.array, cloud_send_output.array, axis=0)
+        out = chainer.as_variable(out)
+        out.to_gpu()
+
         process_layers = np.arange(self.cloud_run_layers+1, 12)
-        out = self.cal_forward(chainer.as_variable(out), process_layers)
+        out = self.cal_forward(out, process_layers)
 
         # Calculate gradiens phase
         if self.device_run_layers != 0:
@@ -511,15 +527,18 @@ class Connecter(communication_pb2_grpc.CommServicer):
             all_Y = np.append(all_Y, self.cloud_output_y.array, axis=0)
         else:
             all_Y = np.append(self.Y.array, self.cloud_output_y.array, axis=0)
+        all_Y = chainer.as_variable(all_Y)
+        all_Y.to_gpu()
 
         process_layers = np.arange(self.cloud_run_layers+1, 12)
-        out = self.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
+        out = self.cal_gradients(out, process_layers, all_Y)
 
         # spilt the cloud gradients
         batch_size = out.shape[0]
 
         self.cloud_output_grads = out[batch_size-self.cloud_batch:]
         out = out[:batch_size-self.cloud_batch]
+        self.cloud_output_grads.to_cpu()
         self.cloud_output_gradients_flag = True
 
         # continue calculate gradients
@@ -531,6 +550,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
             batch_size = out.shape[0]
             self.device_output_grads = out[batch_size-self.device_batch:]
             out = out[:batch_size-self.device_batch]
+            self.device_output_grads.to_cpu()
             self.device_output_gradients_flag = True
 
             # continue calculate gradients
@@ -552,20 +572,28 @@ class Connecter(communication_pb2_grpc.CommServicer):
         process_layers = np.arange(self.cloud_run_layers+1)
         out = self.cal_forward(input_x, process_layers)
 
+
+
         if self.cloud_run_layers != 0:
             cloud_send_output = self.get_cloud_output()
             self.cloud_batch = cloud_send_output.shape[0]
+            out.to_cpu()
             out = np.append(out.array, cloud_send_output.array, axis=0)
+            out = chainer.as_variable(out)
+            out.to_gpu()
 
         process_layers = np.arange(self.cloud_run_layers+1, self.device_run_layers+1)
-        out = self.cal_forward(chainer.as_variable(out), process_layers)
+        out = self.cal_forward(out, process_layers)
 
         device_send_output = self.get_device_output()
         self.device_batch = device_send_output.shape[0]
 
+        out.to_cpu()
         out = np.append(out.array, device_send_output.array, axis=0)
+        out = chainer.as_variable(out)
+        out.to_gpu()
         process_layers = np.arange(self.device_run_layers+1, 12)
-        out = self.cal_forward(chainer.as_variable(out), process_layers)
+        out = self.cal_forward(out, process_layers)
 
         # Calculate gradients phase
         if self.cloud_run_layers != 0:
@@ -573,15 +601,17 @@ class Connecter(communication_pb2_grpc.CommServicer):
             all_Y = np.append(all_Y, self.device_output_y.array, axis=0)
         else:
             all_Y = np.append(self.Y.array, self.device_output_y.array, axis=0)
-
+        all_Y = chainer.as_variable(all_Y)
+        all_Y.to_gpu()
 
         process_layers = np.arange(self.device_run_layers+1, 12)
-        out = self.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
+        out = self.cal_gradients(out, process_layers, all_Y)
 
         #spilt the device gradients
         batch_size = out.shape[0]
         self.device_output_grads = out[batch_size-self.device_batch:]
         out = out[:batch_size-self.device_batch]
+        self.device_output_grads.to_cpu()
         self.device_output_gradients_flag = True
 
         # continue calculate gradients
@@ -593,6 +623,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
             batch_size = out.shape[0]
             self.cloud_output_grads = out[batch_size-self.cloud_batch:]
             out = out[:batch_size-self.cloud_batch]
+
+            self.cloud_output_grads.to_cpu()
             self.cloud_output_gradients_flag = True
 
             #continue calculate gradients
@@ -618,13 +650,15 @@ class Connecter(communication_pb2_grpc.CommServicer):
             self.cloud_batch = cloud_send_output.shape[0]
             self.device_batch = device_send_output.shape[0]
 
+            out.to_cpu()
             out = np.append(out.array, cloud_send_output.array, axis=0)
             out = np.append(out, device_send_output.array, axis=0)
-
+            out = chainer.as_variable(out)
+            out.to_gpu()
 
         # ts1 = time.time()
         process_layers = np.arange(self.device_run_layers+1, 12)
-        out = self.cal_forward(chainer.as_variable(out), process_layers)
+        out = self.cal_forward(out, process_layers)
 
 
         # Calculate gradients phase
@@ -634,19 +668,23 @@ class Connecter(communication_pb2_grpc.CommServicer):
             all_Y = np.append(all_Y, self.device_output_y.array, axis=0)
         else:
             all_Y = self.Y.array
+        all_Y = chainer.as_variable(all_Y)
+        all_Y.to_gpu()
         process_layers = np.arange(self.device_run_layers+1, 12)
-        out = self.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
+        out = self.cal_gradients(out, process_layers, all_Y)
 
         # Spilt gradients for cloud and device
         if self.device_run_layers != 0 and self.cloud_run_layers != 0:
             batch_size = out.shape[0]
             self.device_output_grads = out[batch_size-self.device_batch:]
             out = out[:batch_size-self.device_batch]
+            self.device_output_grads.to_cpu()
             self.device_output_gradients_flag = True
 
             batch_size = out.shape[0]
             self.cloud_output_grads = out[batch_size-self.cloud_batch:]
             out = out[:batch_size-self.cloud_batch]
+            self.cloud_output_grads.to_cpu()
             self.cloud_output_gradients_flag = True
 
             # Continue calculate gradients
@@ -702,6 +740,9 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         raw_input = chainer.as_variable(pickle.loads(request.raw_x))
         self.Y = chainer.as_variable(pickle.loads(request.Y))
+        if self.use_gpu:
+            raw_input.to_gpu()
+
         out = self.run_training(raw_input, self.Y)
 
         self.ready_for_new_epoch = False
