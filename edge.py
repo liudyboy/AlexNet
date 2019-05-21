@@ -111,79 +111,81 @@ class Connecter(communication_pb2_grpc.CommServicer):
             self.fc8.w, self.fc8.b = chainer.as_variable(self.fc8.w), chainer.as_variable(self.fc8.b)
 
     def cal_forward(self, out, process_layers):
-        print("process layers: ", process_layers)
-        ts3 = time.time()
+        # print("process layers: ", process_layers)
+        # ts3 = time.time()
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 1 in process_layers:
             out = self.conv1.forward(out)
-        ts2 = time.time()
-        print("lyaer 1 cost time:", (ts2 -ts1) * 1000)
+        # ts2 = time.time()
+        # print("lyaer 1 cost time:", (ts2 -ts1) * 1000)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 2 in process_layers:
             out = self.max_pool1.forward(out)
-        ts2 = time.time()
-        print("lyaer 2 cost time:", (ts2 -ts1) * 1000)
-        ts1 = time.time()
+        # ts2 = time.time()
+        # print("lyaer 2 cost time:", (ts2 -ts1) * 1000)
+        # ts1 = time.time()
         if 3 in process_layers:
             out = self.conv2.forward(out)
-        ts2 = time.time()
-        print("lyaer 3 cost time:", (ts2 -ts1) * 1000)
+        # ts2 = time.time()
+        # print("lyaer 3 cost time:", (ts2 -ts1) * 1000)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 4 in process_layers:
             out = self.max_pool2.forward(out)
-        ts2 = time.time()
-        print("layer 4 cost time: ", (ts2-ts1)*1000.)
+        # ts2 = time.time()
+        # print("layer 4 cost time: ", (ts2-ts1)*1000.)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 5 in process_layers:
             out = self.conv3.forward(out)
-        ts2 = time.time()
-        print("layer 5 cost time: ", (ts2-ts1)*1000.)
+        # ts2 = time.time()
+        # print("layer 5 cost time: ", (ts2-ts1)*1000.)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 6 in process_layers:
             out = self.conv4.forward(out)
-        ts2 = time.time()
-        print("layer 6 cost time: ", (ts2-ts1)*1000.)
+        # ts2 = time.time()
+        # print("layer 6 cost time: ", (ts2-ts1)*1000.)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 7 in process_layers:
             out = self.conv5.forward(out)
-        ts2 = time.time()
-        print("layer 7 cost time: ", (ts2-ts1)*1000.)
+        # ts2 = time.time()
+        # print("layer 7 cost time: ", (ts2-ts1)*1000.)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 8 in process_layers:
             out = self.max_pool5.forward(out)
-        ts2 = time.time()
-        print("layer 8 cost time: ", (ts2-ts1)*1000.)
+        # ts2 = time.time()
+        # print("layer 8 cost time: ", (ts2-ts1)*1000.)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 9 in process_layers:
             out = self.fc6.forward(out)
-        ts2 = time.time()
-        print("layer 9 cost time: ", (ts2-ts1)*1000.)
+        # ts2 = time.time()
+        # print("layer 9 cost time: ", (ts2-ts1)*1000.)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 10 in process_layers:
             out = self.fc7.forward(out)
-        ts2 = time.time()
-        print("layer 10 cost time: ", (ts2-ts1)*1000.)
+        # ts2 = time.time()
+        # print("layer 10 cost time: ", (ts2-ts1)*1000.)
 
-        ts1 = time.time()
+        # ts1 = time.time()
         if 11 in process_layers:
             out = self.fc8.forward(out)
-        ts2 = time.time()
-        print("layer 11 cost time: ", (ts2-ts1)*1000.)
+        # ts2 = time.time()
+        # print("layer 11 cost time: ", (ts2-ts1)*1000.)
 
-        ts4 = time.time()
-        print("total forward time:", (ts4 - ts3) * 1000.)
+        # ts4 = time.time()
+        # print("total forward time:", (ts4 - ts3) * 1000.)
         return out
 
     def cal_gradients(self, d_out, process_layers, Y=None):
+
+        ts1 = time.time()
         if 11 in process_layers:
             loss = F.softmax_cross_entropy(d_out, Y)
             accuracy = F.accuracy(d_out, Y)
@@ -193,27 +195,60 @@ class Connecter(communication_pb2_grpc.CommServicer):
             if isinstance(d_out, (list)):
                 d_out = d_out[0]
             d_out = self.fc8.backward(d_out)
+
+        ts2 = time.time()
+        print("cal gradients layer 11 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 10 in process_layers:
             d_out = self.fc7.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 10 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 9 in process_layers:
             d_out = self.fc6.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 9 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 8 in process_layers:
             d_out = self.max_pool5.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 8 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 7 in process_layers:
             d_out = self.conv5.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 7 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 6 in process_layers:
             d_out = self.conv4.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 6 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 5 in process_layers:
             d_out = self.conv3.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 5 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 4 in process_layers:
             d_out = self.max_pool2.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 4 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 3 in process_layers:
             d_out = self.conv2.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 3 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 2 in process_layers:
             d_out = self.max_pool1.backward(d_out)
+        ts2 = time.time()
+        print("cal gradients layer 2 time: ", (ts2 - ts1) * 1000.)
+        ts1 = time.time()
         if 1 in process_layers:
             d_out = self.conv1.backward(d_out)
 
+        ts2 = time.time()
+        print("cal gradients layer 1 time: ", (ts2 - ts1) * 1000.)
         return d_out
 
     def update_layers_parameters(self, process_layers, batch_size):
