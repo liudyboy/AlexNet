@@ -94,6 +94,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
     def cal_forward(self, out, process_layers):
+        print("process layers :", process_layers)
+        ts1 = time.time()
         if 1 in process_layers:
             out = self.conv1.forward(out)
         if 2 in process_layers:
@@ -116,9 +118,13 @@ class Connecter(communication_pb2_grpc.CommServicer):
             out = self.fc7.forward(out)
         if 11 in process_layers:
             out = self.fc8.forward(out)
+        ts2 = time.time()
+        print("forward time: ", (ts2 - ts1) * 1000)
         return out
 
     def cal_gradients(self, d_out, process_layers, Y=None):
+        print("process layers :", process_layers)
+        ts1 = time.time()
         if 11 in process_layers:
             loss = F.softmax_cross_entropy(d_out, Y)
             accuracy = F.accuracy(d_out, Y)
@@ -148,6 +154,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
             d_out = self.max_pool1.backward(d_out)
         if 1 in process_layers:
             d_out = self.conv1.backward(d_out)
+        ts2 = time.time()
+        print('cal gradeints time:', (ts2 - ts1) * 1000.)
         return
 
 
@@ -229,9 +237,12 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
     def send_output_data(self, destination, output, Y):
-        print('Send output to edge')
+        ts1 = time.time()
+        print('Send output to Cloud start time: ', ts1)
         reply = connect.conn_send_cloud_output_data(destination, output.array, Y.array)
         reply = chainer.as_variable(reply)
+        ts2 = time.time()
+        print("edge send output to cloud cost time: ", (ts2 - ts1) * 1000.)
         return reply
 
     # Function call by device
@@ -245,21 +256,14 @@ class Connecter(communication_pb2_grpc.CommServicer):
             self.init_layers(process_layers)
         self.init_variables()
 
-
+        ts1 = time.time()
+        print("Get raw data time: ", ts1)
         self.raw_input = chainer.as_variable(pickle.loads(request.raw_x))
         self.Y = chainer.as_variable(pickle.loads(request.Y))
         process_layers = np.arange(1, self.cloud_run_layers+1)
         output = self.cal_forward(self.raw_input, process_layers)
 
-        # wait edge ready for start a new epoch
-        while connect.conn_get_singal_for_new_epoch(self.edge_address) is False:
-            pass
-
-
-
         output_reply = self.send_output_data(self.edge_address, output, self.Y)
-
-
 
         self.cal_gradients(output_reply, process_layers, self.Y)
 

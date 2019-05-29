@@ -214,14 +214,18 @@ def init_signal():
 def send_raw_data(threadName, threadID, destination, X, Y):
     global finish_flag
     print(threadName, " start")
+    ts1 = time.time()
     connect.conn_send_raw_data(destination, X.array, Y.array)
-    print(threadName, " end")
+    ts2 = time.time()
+    print(threadName, " end cost time: ", (ts2 - ts1) * 1000.)
     finish_flag += 1
 
 def send_output_data(destination, output, Y):
     print('Send output to edge')
+    ts1 = time.time()
     reply = connect.conn_send_device_output_data(destination, output.array, Y.array)
-    print('receive output gradients')
+    ts2 = time.time()
+    print('send output to cloud cost time: ', (ts2 - ts1) * 1000.)
     return chainer.as_variable(reply)
 
 def get_one_layer_gradients(destination, grads_w, grads_bias, layer_num):
@@ -251,7 +255,7 @@ if __name__ == "__main__":
     my_args = args.init_args()
     device_run_layers, cloud_run_layers = my_args.M1, my_args.M2
     init_layers(np.arange(device_run_layers+1))
-    edge_batch, cloud_batch = 53, 48
+    edge_batch, cloud_batch = 78, 50
     logging.basicConfig()
     generations = 10
     total_batch_size = 128
@@ -260,7 +264,7 @@ if __name__ == "__main__":
         trainX, trainY = utils.get_batch_data(total_batch_size)
         trainX = chainer.as_variable(trainX)
         trainY = chainer.as_variable(trainY.astype(np.int32))
-
+        print("train data shape: ", trainX.shape)
         ts1 = time.time()
 
         #spilt raw data for edge , cloud
@@ -275,6 +279,8 @@ if __name__ == "__main__":
         trainX = trainX[:batch_size-edge_batch]
         trainY = trainY[:batch_size-edge_batch]
 
+        tt1 = time.time()
+        print("Start thread time: ", tt1)
         try:
             if cloud_run_layers != 0:
                 _thread.start_new_thread(send_raw_data, ("send cloud thread", 0, cloud_address, cloud_X, cloud_Y))
@@ -287,6 +293,8 @@ if __name__ == "__main__":
 
             tts2 = time.time()
             print('forward cost time: ', (tts2 - ts1) * 1000.)
+
+            print("send cloud output data shape:", output.shape)
             output_reply = send_output_data(edge_address, output, trainY)
 
             tts3 = time.time()

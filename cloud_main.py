@@ -37,13 +37,18 @@ class Connecter(communication_pb2_grpc.CommServicer):
     ready_for_new_epoch = False
     finished_epoch = False
     use_gpu = True
+
+    cloud_output_gradients_flag = False
+    device_output_gradients_flag = False
+    device_return_time = 0
+    edge_return_time = 0
+    cloud_output_flag = False
+    device_output_flag = False
     def init_variables(self):
         self.TOTAL_BATCH_SZIE = 128
-        self.device_output_flag = False
-        self.device_output_gradients_flag = False
+        # self.device_output_gradients_flag = False
         self.device_output_grads = None
-        self.cloud_output_flag = False
-        self.cloud_output_gradients_flag = False
+        # self.cloud_output_gradients_flag = False
         self.cloud_output_grads = None
         self.layers_gradients_flag = np.zeros(12)
         self.layers_gradients_flag[0] = 2            # for target[0] initial value is 1
@@ -52,13 +57,19 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         self.ready_for_new_epoch = True # assure that new epoch is start by devcie call process_raw_data
 
+        self.device_return_time = 0
+        self.edge_return_time = 0
         for i in np.arange(self.device_run_layers+1):
             if i not in [2, 4, 8]:
                 self.layers_gradients_flag_target[i] += 1
         for i in np.arange(self.cloud_run_layers+1):
             if i not in [2, 4, 8]:
                 self.layers_gradients_flag_target[i] += 1
-
+    def init_flag(self):
+        self.cloud_output_gradients_flag = False
+        self.device_output_gradients_flag = False
+        self.cloud_output_flag = False
+        self.device_output_flag = False
 
     def init_layers(self, process_layers):
         self.init_layers_flag = True
@@ -367,6 +378,11 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.device_output_flag = True
         grads = self.get_device_output_gradients()
         grads.to_cpu()
+
+        self.device_return_time = time.time()
+        if self.edge_return_time != 0:
+            print('edge return ahead device time:', (self.device_return_time - self.edge_return_time) * 1000.)
+
         grads = pickle.dumps(grads.array)
         return communication_pb2.OutputReply(grads=grads)
 
@@ -387,7 +403,10 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.cloud_output_x = chainer.as_variable(pickle.loads(request.output))
         self.cloud_output_y = chainer.as_variable(pickle.loads(request.Y))
         self.cloud_output_flag = True
-        # print('function process_cloud_output set cloud_output flag: ', self.cloud_output_flag)
+
+        ts1 = time.time()
+        print("Get Edge output time: ", ts1)
+
         grads = self.get_cloud_output_gradients()
         grads.to_cpu()
         grads = pickle.dumps(grads.array)
@@ -466,6 +485,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         grads_bias = chainer.as_variable(pickle.loads(request.grads_bias))
         name = pickle.loads(request.name)
 
+
         self.Log('{} call get one layer gradients for layer {}'.format(name, num_layer))
         while self.prepared_for_recv_gradients == False:
             pass
@@ -497,7 +517,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
         return
 
     def device_ahead_cloud(self, input_x, label):
-        # print('function device_ahead_cloud start')
+        ts1 = time.time()
+        print("Get raw time: ", ts1)
         # Forward phase
         process_layers = np.arange(self.device_run_layers+1)
         out = self.cal_forward(input_x, process_layers)
@@ -562,12 +583,14 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.update_layers_parameters(process_layers, self.TOTAL_BATCH_SZIE)
 
         self.prepared_for_recv_gradients = True
-
         self.wait_update_parameters_completed()
         return
 
 
     def cloud_ahead_device(self, input_x, label):
+
+        ts1 = time.time()
+        print("Get raw time: ", ts1)
         # Forward phase
         process_layers = np.arange(self.cloud_run_layers+1)
         out = self.cal_forward(input_x, process_layers)
@@ -644,6 +667,9 @@ class Connecter(communication_pb2_grpc.CommServicer):
         if self.device_run_layers != 0 and self.cloud_run_layers != 0:
             process_layers = np.arange(self.device_run_layers+1)
             out = self.cal_forward(out, process_layers)
+
+            tmp_ts1 = time.time()
+
             cloud_send_output = self.get_cloud_output()
             device_send_output = self.get_device_output()
 
@@ -656,7 +682,9 @@ class Connecter(communication_pb2_grpc.CommServicer):
             out = chainer.as_variable(out)
             out.to_gpu()
 
-        # ts1 = time.time()
+        tmp_ts2 = time.time()
+
+        ts1 = time.time()
         process_layers = np.arange(self.device_run_layers+1, 12)
         out = self.cal_forward(out, process_layers)
 
@@ -715,14 +743,6 @@ class Connecter(communication_pb2_grpc.CommServicer):
         elif self.device_run_layers == self.cloud_run_layers:
             self.device_equal_cloud(input_x, label)
 
-    def get_singal_for_new_epoch(self, request, context):
-        singal = pickle.dumps(self.ready_for_new_epoch)
-        return communication_pb2.Singal(singal=singal)
-
-    def get_singal_for_finished_epoch(self, request, context):
-        singal = pickle.dumps(self.finished_epoch)
-        return communication_pb2.Singal(singal=singal)
-
 
     # Function call by device
     # Parames: raw_data_x, layer_y
@@ -735,9 +755,9 @@ class Connecter(communication_pb2_grpc.CommServicer):
             self.process_layers = np.arange(edge_run_layers+1)
             self.init_layers(self.process_layers)
 
-        # print('process a new raw data')
         self.init_variables()
 
+        self.tmp_ts1 = time.time()
         raw_input = chainer.as_variable(pickle.loads(request.raw_x))
         self.Y = chainer.as_variable(pickle.loads(request.Y))
         if self.use_gpu:
@@ -745,7 +765,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         out = self.run_training(raw_input, self.Y)
 
-        self.ready_for_new_epoch = False
+        self.init_flag()
 
         finsh_signal = pickle.dumps(np.zeros(1))
         return communication_pb2.RawReply(signal=finsh_signal)

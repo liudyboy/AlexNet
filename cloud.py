@@ -95,6 +95,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
     def cal_forward(self, out, process_layers):
+        print("process layers ", process_layers)
+        ts1 = time.time()
         if 1 in process_layers:
             out = self.conv1.forward(out)
         if 2 in process_layers:
@@ -117,9 +119,14 @@ class Connecter(communication_pb2_grpc.CommServicer):
             out = self.fc7.forward(out)
         if 11 in process_layers:
             out = self.fc8.forward(out)
+
+        ts2 = time.time()
+        print('forward time: ', (ts2 - ts1) * 1000)
         return out
 
     def cal_gradients(self, d_out, process_layers, Y=None):
+        print('process layers: ',  process_layers)
+        ts1 = time.time()
         if 11 in process_layers:
             loss = F.softmax_cross_entropy(d_out, Y)
             accuracy = F.accuracy(d_out, Y)
@@ -149,18 +156,13 @@ class Connecter(communication_pb2_grpc.CommServicer):
             d_out = self.max_pool1.backward(d_out)
         if 1 in process_layers:
             d_out = self.conv1.backward(d_out)
+        ts2 = time.time()
+        print('cal gradients time: ', (ts2 - ts1)*1000.)
         return
 
 
 
     def get_one_layer_gradients(self, destination, grads_w, grads_bias, layer_num):
-        # print('get layer ', layer_num, ' gradients')
-        # while True:
-        #     recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num)
-        #     if recv_grads_w.shape[0] != 1:
-        #         break
-        # print('get layer ', layer_num, 'gradients completed!')
-        # print('gradients: ', recv_grads_w.shape)
         grads_w = chainer.as_variable(grads_w)
         grads_bias = chainer.as_variable(grads_bias)
         recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w.array, grads_bias.array, layer_num, 'cloud')
@@ -269,7 +271,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
     def send_output_data(self, destination, output, Y):
-        print('Send output to edge')
+        ts1 = time.time()
+        print('Send output to edge time: ', ts1)
         output.to_cpu()
         reply = connect.conn_send_cloud_output_data(destination, output.array, Y.array)
         reply = chainer.as_variable(reply)
@@ -286,18 +289,14 @@ class Connecter(communication_pb2_grpc.CommServicer):
             process_layers = np.arange(self.cloud_run_layers+1)
             self.init_layers(process_layers)
         self.init_variables()
-
+        ts1 = time.time()
+        print("get raw data time: ", ts1)
 
         self.raw_input = chainer.as_variable(pickle.loads(request.raw_x))
         self.Y = chainer.as_variable(pickle.loads(request.Y))
         process_layers = np.arange(1, self.cloud_run_layers+1)
+
         output = self.cal_forward(self.raw_input, process_layers)
-
-        # wait edge ready for start a new epoch
-        while connect.conn_get_singal_for_new_epoch(self.edge_address) is False:
-            pass
-
-
 
         output_reply = self.send_output_data(self.edge_address, output, self.Y)
 
@@ -306,8 +305,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.cal_gradients(output_reply, process_layers, self.Y)
 
         for j in process_layers:
-            ts1 = time.time()
             self.process_gradients_exchange(j)
+            ts1 = time.time()
             self.update_one_layer_parameters(j, self.TOTAL_BATCH)
             ts2 = time.time()
             self.Log('update {} layer cost time: {}'.format(j, (ts2 - ts1) * 1000.))
@@ -320,7 +319,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10), options=[('grpc.max_message_length', 1024*1024*1024), ('grpc.max_send_message_length', 1024*1024*1024), ('grpc.max_receive_message_length', 1024*1024*1024)])
     communication_pb2_grpc.add_CommServicer_to_server(Connecter(), server)
-    server.add_insecure_port("[::]:50052")
+    server.add_insecure_port("[::]:50055")
     server.start()
     try:
         while True:
