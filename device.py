@@ -29,17 +29,17 @@ import sys
 import args
 import _thread
 import connect
-from model import LeNet5
+from model import AlexNet
 
 
-def process_gradients_exchange(mnist, layer_num):
+def process_gradients_exchange(alexnet, layer_num):
     global edge_address
     destination = edge_address
     max_pool_layer = [2, 4]
     if layer_num not in max_pool_layer:
-        grads_w, grads_bias = mnist.get_params_grads(layer_num)
+        grads_w, grads_bias = alexnet.get_params_grads(layer_num)
         grads_w, grads_bias = get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
-        mnist.add_params_grads(layer_num, grads_w, grads_bias)
+        alexnet.add_params_grads(layer_num, grads_w, grads_bias)
     return
 
 def init_signal():
@@ -88,11 +88,11 @@ cloud_address = "192.168.1.70:50055"
 if __name__ == "__main__":
     my_args = args.init_args()
     device_run_layers, cloud_run_layers = my_args.M1, my_args.M2
-    mnist =  LeNet5()
-    mnist.init_layers(np.arange(1, device_run_layers+1))
-    edge_batch, cloud_batch = 512, 0
+    alexnet =  AlexNet()
+    alexnet.init_layers(np.arange(1, device_run_layers+1))
+    edge_batch, cloud_batch = 128, 0
     generations = 10
-    total_batch_size = 512
+    total_batch_size = 128
     for i in range(generations):
         init_signal()
         trainX, trainY = utils.get_batch_data(total_batch_size)
@@ -122,21 +122,21 @@ if __name__ == "__main__":
         if device_run_layers != 0:
             ts1 = time.time()
             process_layers = np.arange(1, device_run_layers+1)
-            output = mnist.forward(trainX, process_layers)
+            output = alexnet.forward(trainX, process_layers)
 
             tts2 = time.time()
             print("start send device output data time: ", tts2)
             output_reply = send_output_data(edge_address, output, trainY)
 
             tts3 = time.time()
-            mnist.cal_gradients(output_reply, process_layers, trainY)
+            alexnet.cal_gradients(output_reply, process_layers, trainY)
 
             tts4 = time.time()
             print('cal gradients cost time: ', (tts4 - tts3) * 1000.)
 
             for j in process_layers:
-                process_gradients_exchange(mnist, j)
-                mnist.update_one_layer_parameters(j, total_batch_size)
+                process_gradients_exchange(alexnet, j)
+                alexnet.update_one_layer_parameters(j, total_batch_size)
 
 
         wait_threads_complete(cloud_run_layers)

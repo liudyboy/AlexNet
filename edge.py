@@ -28,7 +28,7 @@ import numpy as np
 import pickle
 import sys
 import args
-from model import LeNet5
+from model import AlexNet
 
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -41,9 +41,9 @@ class Connecter(communication_pb2_grpc.CommServicer):
     device_output_gradients_flag = False
     cloud_output_flag = False
     cloud_output_gradients_flag = False
-    model_layers_num = 7
+    model_layers_num = 11
     def init_variables(self):
-        self.TOTAL_BATCH_SZIE = 512
+        self.TOTAL_BATCH_SZIE = 128
         self.device_output_grads = None
         self.cloud_output_grads = None
         self.layers_gradients_flag = np.zeros(self.model_layers_num+1)
@@ -53,10 +53,10 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
         for i in np.arange(self.device_run_layers+1):
-            if i not in [2, 4]:
+            if i not in [2, 4, 8]:
                 self.layers_gradients_flag_target[i] += 1
         for i in np.arange(self.cloud_run_layers+1):
-            if i not in [2, 4]:
+            if i not in [2, 4, 8]:
                 self.layers_gradients_flag_target[i] += 1
 
     def init_flag(self):
@@ -132,7 +132,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         while self.prepared_for_recv_gradients == False:
             pass
         # self.Log('prepared for recv gradients is: {}'.format(self.prepared_for_recv_gradients))
-        self.mnist.add_params_grads(num_layer, grads_w, grads_bias)
+        self.alexnet.add_params_grads(num_layer, grads_w, grads_bias)
         self.layers_gradients_flag[num_layer] += 1
 
         # self.Log("gradients flag compare to gradients target")
@@ -141,7 +141,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
             pass
         ts2 = time.time()
         # self.Log('{} call for layer {} gradients, wait another time: {}'.format(name, num_layer, (ts2 - ts1) * 1000.))
-        grads_w, grads_bias = self.mnist.get_params_grads(num_layer)
+        grads_w, grads_bias = self.alexnet.get_params_grads(num_layer)
 
         grads_w = pickle.dumps(grads_w.array)
         grads_bias = pickle.dumps(grads_bias.array)
@@ -159,7 +159,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         # Forward phase
         ts1 = time.time()
         process_layers = np.arange(1, self.device_run_layers+1)
-        out = self.mnist.forward(input_x, process_layers)
+        out = self.alexnet.forward(input_x, process_layers)
         ts2 = time.time()
         t1 = (ts2 - ts1) * 1000
         if self.device_run_layers != 0:
@@ -169,7 +169,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         ts1 = time.time()
         process_layers = np.arange(self.device_run_layers+1, self.cloud_run_layers+1)
-        out = self.mnist.forward(chainer.as_variable(out), process_layers)
+        out = self.alexnet.forward(chainer.as_variable(out), process_layers)
         ts2 = time.time()
         t1 = t1 + (ts2 - ts1) * 1000
         cloud_send_output = self.get_cloud_output()
@@ -177,7 +177,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         ts1 = time.time()
         out = np.append(out.array, cloud_send_output.array, axis=0)
         process_layers = np.arange(self.cloud_run_layers+1, self.model_layers_num+1)
-        out = self.mnist.forward(chainer.as_variable(out), process_layers)
+        out = self.alexnet.forward(chainer.as_variable(out), process_layers)
         ts2 = time.time()
         t1 = t1 + (ts2 - ts1) * 1000
         self.Log("edge forward cost time {}".format(t1))
@@ -190,7 +190,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
             all_Y = np.append(self.Y.array, self.cloud_output_y.array, axis=0)
 
         process_layers = np.arange(self.cloud_run_layers+1, self.model_layers_num+1)
-        out = self.mnist.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
+        out = self.alexnet.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
         ts2 = time.time()
         t2 = (ts2 - ts1) * 1000
         # spilt the cloud gradients
@@ -203,7 +203,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         ts1 = time.time()
         # continue calculate gradients
         process_layers = np.arange(self.device_run_layers+1, self.cloud_run_layers+1)
-        out = self.mnist.cal_gradients(out, process_layers)
+        out = self.alexnet.cal_gradients(out, process_layers)
         ts2 = time.time()
         t2 = t2 + (ts2 - ts1) * 1000
         # spilt the device gradiens
@@ -216,14 +216,14 @@ class Connecter(communication_pb2_grpc.CommServicer):
             ts1 = time.time()
             # continue calculate gradients
             process_layers = np.arange(1, self.device_run_layers+1)
-            out = self.mnist.cal_gradients(out, process_layers)
+            out = self.alexnet.cal_gradients(out, process_layers)
             ts2 = time.time()
             t2 = t2 + (ts2 - ts1) * 1000
             self.Log("edge cal gradient time {}".format(t2))
 
         # update parameters phase
         process_layers = np.arange(self.cloud_run_layers+1, self.model_layers_num+1)
-        self.mnist.update_layers_parameters(process_layers, self.TOTAL_BATCH_SZIE)
+        self.alexnet.update_layers_parameters(process_layers, self.TOTAL_BATCH_SZIE)
 
         self.prepared_for_recv_gradients = True
 
@@ -234,7 +234,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
     def cloud_ahead_device(self, input_x, label):
         # Forward phase
         process_layers = np.arange(1, self.cloud_run_layers+1)
-        out = self.mnist.forward(input_x, process_layers)
+        out = self.alexnet.forward(input_x, process_layers)
 
         if self.cloud_run_layers != 0:
             cloud_send_output = self.get_cloud_output()
@@ -242,14 +242,14 @@ class Connecter(communication_pb2_grpc.CommServicer):
             out = np.append(out.array, cloud_send_output.array, axis=0)
 
         process_layers = np.arange(self.cloud_run_layers+1, self.device_run_layers+1)
-        out = self.mnist.forward(chainer.as_variable(out), process_layers)
+        out = self.alexnet.forward(chainer.as_variable(out), process_layers)
 
         device_send_output = self.get_device_output()
         self.device_batch = device_send_output.shape[0]
 
         out = np.append(out.array, device_send_output.array, axis=0)
         process_layers = np.arange(self.device_run_layers+1, self.model_layers_num+1)
-        out = self.mnist.forward(chainer.as_variable(out), process_layers)
+        out = self.alexnet.forward(chainer.as_variable(out), process_layers)
 
         # Calculate gradients phase
         if self.cloud_run_layers != 0:
@@ -260,7 +260,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
         process_layers = np.arange(self.device_run_layers+1, self.model_layers_num+1)
-        out = self.mnist.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
+        out = self.alexnet.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
 
         #spilt the device gradients
         batch_size = out.shape[0]
@@ -270,7 +270,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         # continue calculate gradients
         process_layers = np.arange(self.cloud_run_layers+1, self.device_run_layers+1)
-        out = self.mnist.cal_gradients(out, process_layers)
+        out = self.alexnet.cal_gradients(out, process_layers)
 
         # spilt the cloud gradients
         if self.cloud_run_layers != 0:
@@ -281,11 +281,11 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
             #continue calculate gradients
             process_layers = np.arange(1, self.cloud_run_layers+1)
-            out = self.mnist.cal_gradients(out, process_layers)
+            out = self.alexnet.cal_gradients(out, process_layers)
 
         # update parameters phase
         process_layers = np.arange(self.device_run_layers+1, self.model_layers_num+1)
-        self.mnist.update_layers_parameters(process_layers, self.TOTAL_BATCH_SZIE)
+        self.alexnet.update_layers_parameters(process_layers, self.TOTAL_BATCH_SZIE)
 
         self.prepared_for_recv_gradients = True
         self.wait_update_parameters_completed()
@@ -295,7 +295,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         # Forward phase
         if self.device_run_layers != 0 and self.cloud_run_layers != 0:
             process_layers = np.arange(1, self.device_run_layers+1)
-            out = self.mnist.forward(out, process_layers)
+            out = self.alexnet.forward(out, process_layers)
             cloud_send_output = self.get_cloud_output()
             device_send_output = self.get_device_output()
 
@@ -307,7 +307,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
         # ts1 = time.time()
         process_layers = np.arange(self.device_run_layers+1, self.model_layers_num+1)
-        out =  self.mnist.forward(chainer.as_variable(out), process_layers)
+        out =  self.alexnet.forward(chainer.as_variable(out), process_layers)
 
 
         # Calculate gradients phase
@@ -318,7 +318,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         else:
             all_Y = self.Y.array
         process_layers = np.arange(self.device_run_layers+1, self.model_layers_num+1)
-        out = self.mnist.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
+        out = self.alexnet.cal_gradients(out, process_layers, chainer.as_variable(all_Y))
 
         # Spilt gradients for cloud and device
         if self.device_run_layers != 0 and self.cloud_run_layers != 0:
@@ -334,11 +334,11 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
             # Continue calculate gradients
             process_layers = np.arange(1, self.device_run_layers+1)
-            out = self.mnist.cal_gradients(out, process_layers)
+            out = self.alexnet.cal_gradients(out, process_layers)
 
         # Update parameters phase
         process_layers = np.arange(self.device_run_layers+1, self.model_layers_num+1)
-        self.mnist.update_layers_parameters(process_layers, self.TOTAL_BATCH_SZIE)
+        self.alexnet.update_layers_parameters(process_layers, self.TOTAL_BATCH_SZIE)
 
         self.prepared_for_recv_gradients = True
         self.wait_update_parameters_completed()
@@ -368,8 +368,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
             self.device_run_layers, self.cloud_run_layers = my_args.M1, my_args.M2
             edge_run_layers = self.model_layers_num
             self.process_layers = np.arange(1, edge_run_layers+1)
-            self.mnist = LeNet5()
-            self.mnist.init_layers(self.process_layers)
+            self.alexnet = AlexNet()
+            self.alexnet.init_layers(self.process_layers)
             self.init_layers_flag = True
 
         # print('process a new raw data')
