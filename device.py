@@ -22,7 +22,7 @@ from chainer import utils
 from chainer import variable
 import update
 import layersM as layers
-import cifar_utils as utils
+import tiny_utils as utils
 import gc
 import time
 import sys
