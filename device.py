@@ -225,13 +225,6 @@ def send_output_data(destination, output, Y):
     return chainer.as_variable(reply)
 
 def get_one_layer_gradients(destination, grads_w, grads_bias, layer_num):
-    # print('get layer ', layer_num, ' gradients')
-    # while True:
-    #     recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w, grads_bias, layer_num)
-    #     if recv_grads_w.shape[0] != 1:
-    #         break;
-    # print('complete get layer', layer_num, ' gradients')
-    # print('layer gradients: ', recv_grads_w.shape)
     grads_w = chainer.as_variable(grads_w)
     grads_bias = chainer.as_variable(grads_bias)
     recv_grads_w, recv_grads_bias = connect.conn_get_gradients(destination, grads_w.array, grads_bias.array, layer_num, 'device')
