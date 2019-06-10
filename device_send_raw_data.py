@@ -41,7 +41,7 @@ edge_address = "192.168.1.77:50055"
 cloud_address = "192.168.1.153:50052"
 
 if __name__ == "__main__":
-    batch_size = 128
+    batch_size = 512
     edge_batch, cloud_batch = batch_size, 0
     generations = 10
     for i in range(generations):

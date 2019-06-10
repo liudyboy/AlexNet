@@ -33,41 +33,47 @@ class labeledImageDataSet(dataset_mixin.DatasetMixin):
         Y = []
         for i in index:
             x, y = self.get_example(i)
+            while(x.shape != (1, 28, 28)):
+                t = np.random.randint(60000, size=1)
+                x, y = self.get_example(t[0])
             X.append(x)
             Y.append(y)
-
         return np.asarray(X, dtype=np.float32), np.asarray(Y, dtype=np.float32)
 
     def get_example(self, i):
+        x, y = self.get_image(i)
+        while(x.shape != (28, 28)):
+            t = np.random.randint(60000, size=1)
+            x, y = self.get_image(t[0])
+
         # imgMean = np.array([104, 117, 124], np.float)
+        # x = x - imgMean
+        x = x.reshape([-1, x.shape[0], x.shape[1]])
+        return x, y
+
+    def get_image(self, i):
         path, int_label = self._pairs[i]
         full_path = os.path.join(self._root, path)
         image = Image.open(full_path)
-        image = image.resize([227, 227])
+        # image = image.resize([227, 227])
         # image.show()
         img = numpy.asarray(image, dtype=np.float32)
         image.close()
-        # img = img - imgMean
         label = numpy.array(int_label, dtype=self._label_dtype)
         return (img), label
 
 
 
 def get_batch_data(batch_size):
-    """read data images from imageNet files """
-
+    """read data images from tiny imageNet files """
     dataset = labeledImageDataSet('./mnist_train.txt', 'training')
 
-    # MAX_NUM = 501265    #the total number of image
-    MAX_NUM = 128000    #the total number of image
-    index = np.random.randint(MAX_NUM, size=batch_size) # randomly get the samples
-    # index = np.arange(batch_size)
+    MAX_NUM = 60000    #the total number of image
+    # index = np.random.randint(MAX_NUM, size=batch_size) # randomly get the samples
+    index = np.arange(batch_size)
     X, Y = dataset.get_batch_data(index)
-    X = np.transpose(X, (0, 3, 1, 2))
+    # X = np.transpose(X, (0, 3, 1, 2))
     return X, Y
-
-
-
 
 def randomize(x, y):
     """ Randomizes the order of data samples and their corresponding labels"""
@@ -196,7 +202,6 @@ def max_pool_grad(input, out, grad_out, filter_w, filter_h):
             for k in np.arange(out.shape[2]):
                 for l in np.arange(out.shape[3]):
                   pass
-
 
 
 

@@ -92,9 +92,10 @@ class conv2d():
 
             if self.activation == 'relu':
                 self.result = F.relu(self.temp_result)
+            elif self.activation == 'tanh':
+                self.result = F.tanh(self.temp_result)
             else:
                 self.result = self.temp_result
-
 
             if self.normalization == "local_response_normalization":
                 self.normal_result = F.local_response_normalization(self.result)
@@ -255,6 +256,10 @@ class dense():
 
         if self.activation == 'relu':
             self.result = F.relu(self.temp_result)
+        elif self.activation == 'tanh':
+            self.result = F.tanh(self.temp_result)
+        elif self.activation == 'softmax':
+            self.result = F.softmax(self.temp_result, axis=1)
         else:
             self.result = self.temp_result
 
