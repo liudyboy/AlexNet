@@ -33,7 +33,6 @@ import connect
 class LeNet5():
     def __init__(self, use_gpu = False):
         self.batch_size = 512
-        self.target_size = 10
         self.use_gpu = use_gpu
         self.model = ["None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None"]
     def load_weight(self, name, layer):
@@ -121,7 +120,109 @@ class LeNet5():
                 self.model[i].update_parameters(batch=batch_size)
 
 
+class AlexNet():
+    def __init__(self, use_gpu = False):
+        self.use_gpu = use_gpu
+        self.batch_size = 128
+        self.model = ["None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None"]
 
+    def load_weight(self, name, layer):
+        c = np.load(name)
+        layer.w, layer.b = c['w'], c['b']
+        layer.w, layer.b = chainer.as_variable(layer.w), chainer.as_variable(layer.b)
+
+    def init_layers(self, process_layers):
+        if 1 in process_layers:
+            self.conv1 = layers.conv2d(filters=96, kernel=[11, 11], padding='SAME', name='conv1', activation='relu', normalization='local_response_normalization', stride=[4, 4], use_gpu=self.use_gpu)
+            self.load_weight("init_wb/conv1.npz", self.conv1)
+            self.model[1] = self.conv1
+        if 2 in process_layers:
+            self.max_pool1 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2], use_gpu=self.use_gpu)
+            self.model[2] = self.max_pool1
+        if 3 in process_layers:
+            self.conv2 = layers.conv2d(filters=256, kernel=[5, 5], padding='SAME', name='conv2', activation='relu', normalization="local_response_normalization", stride=[1, 1], use_gpu=self.use_gpu)
+            self.load_weight("init_wb/conv2.npz", self.conv2)
+            self.model[3] = self.conv2
+        if 4 in process_layers:
+            self.max_pool2 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2], use_gpu=self.use_gpu)
+            self.model[4] = self.max_pool2
+        if 5 in process_layers:
+            self.conv3 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv3', activation='relu', stride=[1, 1], use_gpu=self.use_gpu)
+            self.load_weight("init_wb/conv3.npz", self.conv3)
+            self.model[5] = self.conv3
+        if 6 in process_layers:
+            self.conv4 = layers.conv2d(filters=384, kernel=[3, 3], padding='SAME', name='conv4', activation='relu', stride=[1, 1], use_gpu=self.use_gpu)
+            self.load_weight("init_wb/conv4.npz", self.conv4)
+            self.model[6] = self.conv4
+        if 7 in process_layers:
+            self.conv5 = layers.conv2d(filters=256, kernel=[3, 3], padding='SAME', name='conv5', activation='relu', stride=[1, 1], use_gpu=self.use_gpu)
+            self.load_weight("init_wb/conv5.npz", self.conv5)
+            self.model[7] = self.conv5
+        if 8 in process_layers:
+            self.max_pool5 = layers.max_pool2d(ksize=[3, 3], stride=[2, 2], use_gpu=self.use_gpu)
+            self.model[8] = self.max_pool5
+        if 9 in process_layers:
+            self.fc6 = layers.dense(4096, activation='relu', dropout=True, name='fc6', use_gpu=self.use_gpu)
+            self.load_weight("init_wb/fc6.npz", self.fc6)
+            self.model[9] = self.fc6
+        if 10 in process_layers:
+            self.fc7 = layers.dense(4096, activation='relu', dropout=True, name='fc7', use_gpu=self.use_gpu)
+            self.load_weight("init_wb/fc7.npz", self.fc7)
+            self.model[10] = self.fc7
+        if 11 in process_layers:
+            self.fc8 = layers.dense(200, activation='relu', name='fc8', use_gpu=self.use_gpu)
+            self.load_weight("init_wb/fc8.npz", self.fc8)
+            self.model[11] = self.fc8
+
+    def forward(self, out, process_layers):
+        if self.use_gpu:
+            out.to_gpu(0)
+        for i in process_layers:
+            ts1 = time.time()
+            out = self.model[i].forward(out)
+            ts2 = time.time()
+            print('layer {} forward time: {}'.format(i, (ts2-ts1)*1000))
+        return out
+    def cal_gradients(self, d_out, process_layers, Y=None):
+        if self.use_gpu:
+            d_out.to_gpu(0)
+        process_layers = np.flip(process_layers, axis=0)
+        for i in process_layers:
+            ts1 = time.time()
+            if i == 11:
+                loss = F.softmax_cross_entropy(d_out, Y)
+                accuracy = F.accuracy(d_out, Y)
+                print('loss: {}'.format(loss))
+                print('accuracy: {}'.format(accuracy))
+                d_out = chainer.grad([loss], [d_out])
+                if isinstance(d_out, (list)):
+                    d_out = d_out[0]
+            d_out = self.model[i].backward(d_out)
+            ts2 = time.time()
+            print('layer {} cal graident time: {}'.format(i, (ts2 - ts1) *1000))
+        return d_out
+    def update_one_layer_parameters(self, layer_num, batch_size=128):
+        max_pool_layer = [2, 4, 8]
+        if layer_num not in max_pool_layer:
+            self.model[layer_num].update_parameters(batch=batch_size)
+
+    def get_params_grads(self, layer_num):
+        max_pool_layer = [2, 4, 8]
+        if layer_num not in max_pool_layer:
+            grads_w, grads_bias = self.model[layer_num].get_params_grad()
+            return grads_w, grads_bias
+    def add_params_grads(self, layer_num, grads_w, grads_bias):
+        if self.use_gpu:
+            grads_w.to_gpu(0)
+            grads_bias.to_gpu(0)
+        max_pool_layer = [2, 4, 8]
+        if layer_num not in max_pool_layer:
+            self.model[layer_num].accumulate_params_grad(grads_w, grads_bias)
+    def update_layers_parameters(self, process_layers, batch_size=128):
+        max_pool_layer = [2, 4, 8]
+        for i in process_layers:
+            if i not in max_pool_layer:
+                self.model[i].update_parameters(batch=batch_size)
 class VGG16():
     def __init__(self, use_gpu = False):
         self.batch_size = 256
