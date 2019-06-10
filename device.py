@@ -90,7 +90,7 @@ if __name__ == "__main__":
     device_run_layers, cloud_run_layers = my_args.M1, my_args.M2
     alexnet =  AlexNet()
     alexnet.init_layers(np.arange(1, device_run_layers+1))
-    edge_batch, cloud_batch = 128, 0
+    edge_batch, cloud_batch = 124, 2
     generations = 10
     total_batch_size = 128
     for i in range(generations):

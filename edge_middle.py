@@ -21,7 +21,6 @@ from chainer import utils
 from chainer import variable
 import update
 import layersM as layers
-import mnist_utils as utils
 import gc
 import time
 import numpy as np
@@ -29,7 +28,7 @@ import pickle
 import sys
 import args
 import connect
-from model import LeNet5
+from model import AlexNet
 
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -38,7 +37,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
     init_layers_flag = False
     def init_variables(self):
-        self.TOTAL_BATCH = 512
+        self.TOTAL_BATCH = 128
         self.edge_address = '192.168.1.70:50055'
 
 
@@ -52,11 +51,11 @@ class Connecter(communication_pb2_grpc.CommServicer):
     def process_gradients_exchange(self, layer_num):
         edge_address = self.edge_address
         destination = edge_address
-        max_pool_layer = [2, 4]
+        max_pool_layer = [2, 4, 8]
         if layer_num not in max_pool_layer:
-            grads_w, grads_bias = self.mnist.get_params_grads(layer_num)
+            grads_w, grads_bias = self.alexnet.get_params_grads(layer_num)
             grads_w, grads_bias = self.get_one_layer_gradients(destination, grads_w, grads_bias, layer_num)
-            self.mnist.add_params_grads(layer_num, grads_w, grads_bias)
+            self.alexnet.add_params_grads(layer_num, grads_w, grads_bias)
         return
 
     def send_output_data(self, destination, output, Y):
@@ -76,8 +75,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
             my_args = args.args_prase()
             self.device_run_layers, self.cloud_run_layers = my_args.M1, my_args.M2
             process_layers = np.arange(1, self.cloud_run_layers+1)
-            self.mnist = LeNet5()
-            self.mnist.init_layers(process_layers)
+            self.alexnet = AlexNet()
+            self.alexnet.init_layers(process_layers)
         self.init_variables()
 
         ts1 = time.time()
@@ -85,16 +84,16 @@ class Connecter(communication_pb2_grpc.CommServicer):
         self.raw_input = chainer.as_variable(pickle.loads(request.raw_x))
         self.Y = chainer.as_variable(pickle.loads(request.Y))
         process_layers = np.arange(1, self.cloud_run_layers+1)
-        output = self.mnist.forward(self.raw_input, process_layers)
+        output = self.alexnet.forward(self.raw_input, process_layers)
 
         output_reply = self.send_output_data(self.edge_address, output, self.Y)
 
-        self.mnist.cal_gradients(output_reply, process_layers, self.Y)
+        self.alexnet.cal_gradients(output_reply, process_layers, self.Y)
 
         for j in process_layers:
             ts1 = time.time()
             self.process_gradients_exchange(j)
-            self.mnist.update_one_layer_parameters(j, self.TOTAL_BATCH)
+            self.alexnet.update_one_layer_parameters(j, self.TOTAL_BATCH)
             ts2 = time.time()
             self.Log('update {} layer cost time: {}'.format(j, (ts2 - ts1) * 1000.))
 
