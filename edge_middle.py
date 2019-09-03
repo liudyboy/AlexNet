@@ -38,7 +38,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
     init_layers_flag = False
     def init_variables(self):
         self.TOTAL_BATCH = 128
-        self.edge_address = '192.168.1.70:50055'
+        self.cloud_address = '192.168.1.70:50055'
 
 
     def get_one_layer_gradients(self, destination, grads_w, grads_bias, layer_num):
@@ -49,8 +49,8 @@ class Connecter(communication_pb2_grpc.CommServicer):
 
 
     def process_gradients_exchange(self, layer_num):
-        edge_address = self.edge_address
-        destination = edge_address
+        cloud_address = self.cloud_address
+        destination = cloud_address
         max_pool_layer = [2, 4, 8]
         if layer_num not in max_pool_layer:
             grads_w, grads_bias = self.alexnet.get_params_grads(layer_num)
@@ -86,7 +86,7 @@ class Connecter(communication_pb2_grpc.CommServicer):
         process_layers = np.arange(1, self.cloud_run_layers+1)
         output = self.alexnet.forward(self.raw_input, process_layers)
 
-        output_reply = self.send_output_data(self.edge_address, output, self.Y)
+        output_reply = self.send_output_data(self.cloud_address, output, self.Y)
 
         self.alexnet.cal_gradients(output_reply, process_layers, self.Y)
 

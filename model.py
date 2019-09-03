@@ -81,6 +81,7 @@ class LeNet5():
     def cal_gradients(self, d_out, process_layers, Y=None):
         if self.use_gpu:
             d_out.to_gpu(0)
+            Y.to_gpu(0)
         process_layers = np.flip(process_layers, axis=0)
         for i in process_layers:
             ts1 = time.time()
@@ -186,6 +187,7 @@ class AlexNet():
     def cal_gradients(self, d_out, process_layers, Y=None):
         if self.use_gpu:
             d_out.to_gpu(0)
+            Y.to_gpu(0)
         process_layers = np.flip(process_layers, axis=0)
         for i in process_layers:
             ts1 = time.time()
